@@ -3,58 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iTethr Assistant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>iTethr Assistant - Phoenix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
-    <div class="sidebar-overlay"></div>
 
-    <div id="login-container">
+    <div class="background-container">
+        <div class="shape-1"></div>
+        <div class="shape-2"></div>
+    </div>
+
+    <div id="login-container" class="glass-panel">
         <div class="login-box">
-            <h2>iTethr Login</h2>
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <h2>iTethr Assistant</h2>
+                <p>Phoenix Build</p>
+            </div>
             <form id="login-form">
                 <div class="input-group">
-                    <input type="text" id="username" required>
-                    <label>Username</label>
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" placeholder="Username" required>
                 </div>
                 <div class="input-group">
-                    <input type="password" id="password" required>
-                    <label>Password</label>
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder="Password" required>
                 </div>
-                <button type="submit" id="login-btn">Login</button>
+                <button type="submit" id="login-btn">Authenticate</button>
                 <p id="login-error"></p>
             </form>
         </div>
     </div>
     
-    <div class="sidebar">
-        <h2>Menu</h2>
-    </div>
-
-    <div class="main-content">
-        <div class="header">
-            <div class="menu-toggle">
-                <i class="fas fa-bars"></i>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                 <h2><i class="fas fa-bars"></i> Menu</h2>
             </div>
-            <h1>iTethr Assistant</h1>
+            <ul class="conversation-list">
+                <li class="active"><i class="far fa-comments"></i> New Chat</li>
+            </ul>
+            <div class="sidebar-footer">
+                <p>v14.2.0-Phoenix</p>
+            </div>
         </div>
 
-        <div class="chat-container" id="chat-container">
-            <div class="welcome-screen" id="welcome-screen">
-                <h1 id="welcome-title">Welcome to iTethr</h1>
-                <p id="welcome-subtitle">Your intelligent assistant for a streamlined workflow.</p>
-            </div>
+        <div class="main-content">
+            <div class="chat-header">
+                 <h1>iTethr Assistant</h1>
+                 <p class="status">● Online</p>
             </div>
 
-        <div class="chat-input-area">
-            <form id="chat-form">
-                <input type="text" id="chat-input" placeholder="Ask iTethr anything..." autocomplete="off">
-                <button type="submit" id="send-btn">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </form>
+            <div class="chat-container" id="chat-container">
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="logo-main">
+                        <i class="fas fa-feather-alt"></i>
+                    </div>
+                    <h1 id="welcome-title">Welcome to iTethr</h1>
+                    <p id="welcome-subtitle">Your intelligent assistant for a streamlined workflow.</p>
+                     <div class="suggestion-chips">
+                        <span>What's the community structure?</span>
+                        <span>What is my current time?</span>
+                        <span>Tell me about Hubs</span>
+                    </div>
+                </div>
+                 </div>
+
+            <div class="chat-input-area">
+                <div class="input-wrapper glass-panel">
+                    <form id="chat-form">
+                        <input type="text" id="chat-input" placeholder="Ask anything..." autocomplete="off">
+                        <button type="submit" id="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 

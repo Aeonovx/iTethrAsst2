@@ -1,6 +1,3 @@
-// File: script.js
-// Description: Corrected sidebar toggle logic for mobile.
-
 document.addEventListener("DOMContentLoaded", () => {
     // DOM Elements
     const loginContainer = document.getElementById('login-container');
@@ -8,14 +5,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginError = document.getElementById('login-error');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+
+    const appContainer = document.querySelector('.app-container');
     const chatContainer = document.getElementById('chat-container');
     const welcomeScreen = document.getElementById('welcome-screen');
     const welcomeTitle = document.getElementById('welcome-title');
     const welcomeSubtitle = document.getElementById('welcome-subtitle');
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
-    const menuToggle = document.querySelector('.menu-toggle');
-    const sidebarOverlay = document.querySelector('.sidebar-overlay');
+    const suggestionChips = document.querySelector('.suggestion-chips');
 
     let currentUser = null;
 
@@ -24,11 +22,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const savedUser = sessionStorage.getItem('iTethrUser');
         if (savedUser) {
             currentUser = JSON.parse(savedUser);
+            // Hide login and show app
             loginContainer.style.display = 'none';
+            appContainer.style.display = 'flex';
+            
             welcomeTitle.innerHTML = `Welcome back, <span class="primary-text">${currentUser.name}</span>!`;
             welcomeSubtitle.textContent = `As a ${currentUser.role}, what can I help you achieve today?`;
         } else {
+            // Show login and hide app
             loginContainer.style.display = 'flex';
+            appContainer.style.display = 'none';
         }
     };
 
@@ -50,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const userData = await response.json();
                 currentUser = { name: userData.username, role: userData.role };
                 sessionStorage.setItem('iTethrUser', JSON.stringify(currentUser));
-                checkSession();
+                checkSession(); // Re-check session to update UI
             } else {
                 loginError.textContent = 'Invalid credentials. Please try again.';
             }
@@ -60,26 +63,26 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // --- SIDEBAR TOGGLE (FIXED) ---
-    menuToggle.addEventListener('click', () => {
-        document.body.classList.toggle('sidebar-open');
-    });
-
-    sidebarOverlay.addEventListener('click', () => {
-        document.body.classList.remove('sidebar-open');
-    });
-
     // --- CHAT LOGIC ---
     chatForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const message = chatInput.value.trim();
         if (message) {
             appendMessage(message, 'user');
-            // send message to backend and get response
+            // TODO: Send message to backend and get response
             chatInput.value = '';
             welcomeScreen.style.display = 'none'; // Hide welcome screen on first message
         }
     });
+    
+    // --- SUGGESTION CHIPS ---
+    suggestionChips.addEventListener('click', (e) => {
+        if (e.target.tagName === 'SPAN') {
+            chatInput.value = e.target.textContent;
+            chatInput.focus();
+        }
+    });
+
 
     function appendMessage(text, sender) {
         const messageElement = document.createElement('div');
