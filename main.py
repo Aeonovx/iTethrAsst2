@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import asyncio
+from fastapi.middleware.cors import CORSMiddleware # Import the CORS middleware
 
 # Assuming your iTethrBot class is in 'bot.py'
 from bot import iTethrBot
@@ -22,6 +23,20 @@ app = FastAPI(
     title="iTethr Bot API",
     description="Backend services for the iTethr conversational AI.",
     version="14.2.0-Phoenix"
+)
+
+# --- [FIX] Add CORS Middleware ---
+# This is the most likely fix for the "Could not connect to the server" error.
+origins = [
+    "*"  # You can restrict this to your production URL for better security
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], # Allows all methods
+    allow_headers=["*"], # Allows all headers
 )
 
 # --- Mount Static Files (Corrected Path) ---
@@ -39,8 +54,8 @@ class AuthRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     username: str
-    convo_id: str = None # Allow convo_id to be passed from the frontend
-    user_info: dict = {}   # Allow user_info to be passed
+    convo_id: str = None 
+    user_info: dict = {}
 
 # --- Bot Initialization ---
 try:
@@ -52,7 +67,7 @@ except Exception as e:
 
 # --- API Endpoints ---
 
-@app.get("/", summary="Serve Frontend HTML")
+@app.get("/", summary="Serve Frontend HTML", include_in_schema=False)
 async def serve_frontend(request: Request):
     """Serves the main index.html file that powers the web UI."""
     return templates.TemplateResponse("index.html", {"request": request})
@@ -60,12 +75,11 @@ async def serve_frontend(request: Request):
 @app.post("/api/auth", summary="Authenticate User")
 async def authenticate_user(auth_request: AuthRequest):
     """
-    Handles user authentication. This is a placeholder for your actual validation.
+    Handles user authentication.
     """
     if not bot:
         raise HTTPException(status_code=503, detail="Bot is not initialized.")
     try:
-        # The authenticate method is now in the bot class
         user = bot.authenticate(auth_request.name, auth_request.password)
         if user:
             logger.info(f"Authentication successful for user: {user['username']}")
@@ -81,14 +95,12 @@ async def authenticate_user(auth_request: AuthRequest):
 async def chat_endpoint(chat_request: ChatRequest):
     """
     Receives a message and streams the bot's response back to the client.
-    This is the core of the live, conversational experience.
     """
     if not bot:
         raise HTTPException(status_code=503, detail="Bot service is not available.")
 
     async def stream_generator():
         try:
-            # Use the bot's streaming generator
             g = bot.get_response_stream(
                 message=chat_request.message,
                 username=chat_request.username,
@@ -97,7 +109,7 @@ async def chat_endpoint(chat_request: ChatRequest):
             )
             for chunk in g:
                 yield chunk
-                await asyncio.sleep(0.01) # Small delay to ensure chunks are sent timely
+                await asyncio.sleep(0.01)
         except Exception as e:
             logger.error(f"Error during response streaming: {e}")
             yield "Error: Could not generate a response."
@@ -107,6 +119,5 @@ async def chat_endpoint(chat_request: ChatRequest):
 
 # --- Server Execution ---
 if __name__ == "__main__":
-    # Use the PORT environment variable provided by Railway, default to 8080
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
