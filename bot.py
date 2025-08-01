@@ -1,8 +1,6 @@
 # File: bot.py
 # Description: The core logic for the iTethr Bot.
-# [FIX] Updated tool-calling logic to correctly handle arguments.
-# [IMPROVEMENT] Enhanced RAG, system prompt, and document loading.
-# [FIX] Added the missing authenticate method.
+# [FIX] Corrected a critical typo in the add_message_to_conversation method call.
 
 import os
 import logging
@@ -136,7 +134,6 @@ class iTethrBot:
             logger.error(f"Fatal error during bot setup: {e}", exc_info=True)
             raise
 
-    # [IMPROVEMENT] Implemented document loading and embedding.
     def _load_all_documents(self):
         doc_path = './documents'
         if not os.path.exists(doc_path):
@@ -161,14 +158,12 @@ class iTethrBot:
             except Exception as e:
                 logger.error(f"Failed to create embeddings: {e}")
 
-
     def _create_chunks(self, content: str, chunk_size=400, overlap=50) -> List[str]:
         if not content: return []
         words = content.split()
         if not words: return []
         return [' '.join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size - overlap)]
 
-    # [IMPROVEMENT] Added a similarity threshold to improve relevance.
     def _search_knowledge(self, question: str, top_k=3) -> str:
         if len(self.documents) == 0 or self.embeddings is None or len(self.embeddings) == 0:
             return ""
@@ -176,7 +171,6 @@ class iTethrBot:
             question_embedding = self.embeddings_model.encode([question])
             similarities = cosine_similarity(question_embedding, self.embeddings)[0]
             top_indices = np.argsort(similarities)[-top_k:][::-1]
-            # [IMPROVEMENT] Filter results by a similarity threshold.
             relevant_docs = [self.documents[idx] for idx in top_indices if similarities[idx] > 0.3]
             return "\n\n---\n\n".join(relevant_docs)
         except Exception as e:
@@ -192,7 +186,6 @@ class iTethrBot:
 
             context = self._search_knowledge(message)
 
-            # [IMPROVEMENT] Greatly enhanced system prompt for better performance.
             system_prompt = f"""
             You are iBot, an extremely fast, accurate, and helpful AI assistant for the iTethr team, Powered by AeonovX.
             Your version is {self.version}. You are an expert on the iTethr platform.
@@ -233,7 +226,8 @@ class iTethrBot:
 
                 if tool_calls_to_process:
                     assistant_message = {"role": "assistant", "content": None, "tool_calls": tool_calls_to_process}
-                    self.memory.add__message_to_conversation(username, convo_id, assistant_message)
+                    # [FIX] Corrected the typo below from add__message... to add_message...
+                    self.memory.add_message_to_conversation(username, convo_id, assistant_message)
                     api_history.append(assistant_message)
 
                     for tool_call in tool_calls_to_process:
@@ -241,7 +235,6 @@ class iTethrBot:
                         tool_args_str = tool_call['function']['arguments']
                         tool_call_id = tool_call['id']
 
-                        # The model now correctly returns arguments as a stringified JSON object.
                         tool_output = tools.execute_tool(name=tool_name, args=tool_args_str)
 
                         tool_result_message = {

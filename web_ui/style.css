@@ -1,5 +1,6 @@
 /* File: style.css */
 /* Description: Futuristic Glassmorphism UI for iTethr Assistant */
+/* [FIX] Added styles for typing indicator, user profile, and responsive menu. Changed chat background. */
 
 /* --- Root Variables & General Styles --- */
 :root {
@@ -163,6 +164,11 @@ body {
     background-color: var(--primary-accent-dark);
 }
 
+#login-btn:disabled {
+    background-color: var(--primary-accent-dark);
+    cursor: not-allowed;
+}
+
 #login-error {
     color: var(--error-color);
     margin-top: 15px;
@@ -173,8 +179,9 @@ body {
 /* --- Main App Layout --- */
 .app-container {
     display: none; /* Hidden by default */
-    display: flex;
     height: 100vh;
+    width: 100vw;
+    position: relative;
 }
 
 .sidebar {
@@ -185,10 +192,13 @@ body {
     flex-direction: column;
     border-right: 1px solid var(--border-color);
     transition: transform 0.3s ease-in-out;
+    z-index: 100;
+    flex-shrink: 0;
 }
 
 .sidebar-header {
     margin-bottom: 30px;
+    cursor: pointer;
 }
 
 .sidebar-header h2 {
@@ -199,6 +209,7 @@ body {
 .conversation-list {
     list-style: none;
     flex-grow: 1;
+    overflow-y: auto;
 }
 
 .conversation-list li {
@@ -220,8 +231,39 @@ body {
     margin-right: 12px;
 }
 
+/* [FIX] Styles for new profile section */
+.sidebar-profile {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+}
+#user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--primary-accent);
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+}
+#user-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+#user-role {
+    font-size: 14px;
+    color: var(--text-color-secondary);
+}
+
 
 .sidebar-footer {
+    padding-top: 20px;
     color: var(--text-color-secondary);
     font-size: 12px;
     text-align: center;
@@ -262,6 +304,8 @@ body {
     padding: 30px;
     display: flex;
     flex-direction: column;
+    /* [FIX] Changed background color to match sidebar */
+    background-color: var(--surface-color);
 }
 
 /* --- Welcome Screen --- */
@@ -335,16 +379,40 @@ body {
 }
 
 .chat-message.bot {
-    background-color: var(--surface-color);
+    background-color: var(--bg-color); /* Differentiate bot bubble from new background */
     color: var(--text-color);
     align-self: flex-start;
     border-bottom-left-radius: 5px;
+}
+
+/* [FIX] Styles for typing indicator */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+}
+.typing-indicator span {
+    height: 8px;
+    width: 8px;
+    margin: 0 2px;
+    background-color: var(--text-color-secondary);
+    border-radius: 50%;
+    display: inline-block;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1.0); }
 }
 
 
 /* --- Chat Input Area --- */
 .chat-input-area {
     padding: 20px 30px;
+    background-color: var(--surface-color); /* Match chat container bg */
+    border-top: 1px solid var(--border-color);
 }
 .input-wrapper {
     width: 100%;
@@ -390,8 +458,15 @@ body {
 
 /* --- Responsive Design --- */
 @media (max-width: 768px) {
+    .app-container {
+        display: flex; /* Override the default 'none' for JS toggle */
+    }
     .sidebar {
-        display: none; /* Simplification for mobile, can be a toggle menu */
+        position: absolute;
+        transform: translateX(-100%);
+    }
+    .app-container.sidebar-visible .sidebar {
+        transform: translateX(0);
     }
     .chat-container {
         padding: 15px;
