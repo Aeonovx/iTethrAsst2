@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInfo = document.getElementById('user-info');
     const logoutButton = document.getElementById('logout-button');
     const conversationHistory = document.getElementById('conversation-history');
-    const newChatButton = document.getElementById('new-chat-button');
     const welcomeMessage = document.getElementById('welcome-message');
 
     // --- State Management ---
@@ -70,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return messageContent;
     };
 
-    // [NEW] Function to show the thinking indicator
     const showThinkingIndicator = () => {
         welcomeMessage.style.display = 'none';
         chatMessages.style.display = 'flex';
@@ -174,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // [UPDATED] Send message handler with thinking indicator logic
     const handleSendMessage = async (e) => {
         e.preventDefault();
         const message = messageInput.value.trim();
@@ -185,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         autoResizeTextarea();
         sendButton.disabled = true;
 
-        showThinkingIndicator(); // Show thinking indicator immediately
+        showThinkingIndicator();
         
         let botMessageContent;
         let fullResponse = "";
@@ -197,17 +194,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ message, username: currentUser.name, convo_id: currentConversationId }),
             });
 
+            // [FIX] Check if the HTTP response itself is an error
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             
-            // Remove the thinking indicator once the first chunk arrives
             const thinkingIndicator = document.getElementById('thinking-indicator');
 
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
 
-                // Remove indicator on first chunk
                 if (thinkingIndicator && !botMessageContent) {
                     thinkingIndicator.remove();
                 }
@@ -216,21 +216,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 const lines = chunk.split('\n').filter(line => line.trim() !== '');
 
                 for (const line of lines) {
-                    const data = JSON.parse(line);
+                    try {
+                        const data = JSON.parse(line);
 
-                    if (data.type === 'chunk') {
-                        if (!botMessageContent) {
-                            botMessageContent = appendMessage('bot', '');
+                        if (data.type === 'chunk') {
+                            if (!botMessageContent) {
+                                botMessageContent = appendMessage('bot', '');
+                            }
+                            fullResponse += data.content;
+                            botMessageContent.innerHTML = marked.parse(fullResponse);
+                            scrollToBottom();
+                        } else if (data.type === 'end') {
+                            if (!currentConversationId) {
+                                currentConversationId = data.convo_id;
+                                await loadConversationHistory();
+                            }
+                            if(botMessageContent) addCopyButtons(botMessageContent);
+                        // [FIX] Handle specific error messages streamed from the backend
+                        } else if (data.type === 'error') {
+                            console.error("Backend error:", data.content);
+                            if (botMessageContent) {
+                                botMessageContent.innerHTML += `<p><em><br>Error: ${data.content}</em></p>`;
+                            } else {
+                                appendMessage('bot', `Sorry, the bot encountered an error: ${data.content}`);
+                            }
                         }
-                        fullResponse += data.content;
-                        botMessageContent.innerHTML = marked.parse(fullResponse);
-                        scrollToBottom();
-                    } else if (data.type === 'end') {
-                        if (!currentConversationId) {
-                            currentConversationId = data.convo_id;
-                            await loadConversationHistory();
-                        }
-                        addCopyButtons(botMessageContent);
+                    } catch (e) {
+                        console.error("Failed to parse stream line:", line, e);
                     }
                 }
             }
@@ -240,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (thinkingIndicator) thinkingIndicator.remove();
             
             if (botMessageContent) {
-                botMessageContent.innerHTML += "<p><em>Sorry, an error occurred.</em></p>";
+                botMessageContent.innerHTML += "<p><em>Sorry, a connection error occurred.</em></p>";
             } else {
                 appendMessage('bot', 'Sorry, an error occurred.');
             }

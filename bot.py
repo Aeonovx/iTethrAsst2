@@ -35,7 +35,8 @@ class GeminiClient:
         if not api_key:
             raise ValueError("Gemini API key is required.")
         self.api_key = api_key
-        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:streamGenerateContent?key={self.api_key}"
+        # [FIX] Corrected the Gemini model name to a valid one.
+        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:streamGenerateContent?key={self.api_key}"
 
     def generate_response_stream(self, conversation_history: List[Dict], tools_config: Dict) -> Generator[Dict, None, None]:
         """Generates a response from Gemini, yielding dictionary objects."""
@@ -61,9 +62,9 @@ class GeminiClient:
                     part = data["candidates"][0]["content"]["parts"][0]
                     if "text" in part:
                         yield {"type": "chunk", "content": part["text"]}
+                    # [FIX] Added handling for function calls from the model
                     elif "functionCall" in part:
-                        # Handle function calls as before
-                        pass # Simplified for brevity
+                        yield {"type": "function_call", "call": part["functionCall"]}
             except (json.JSONDecodeError, KeyError, IndexError) as e:
                 logger.warning(f"Could not parse a stream chunk: {chunk_str}. Error: {e}")
                 continue
@@ -120,7 +121,7 @@ class iTethrBot:
     """The core intelligence of the iTethr Bot."""
     
     def __init__(self):
-        self.version = "12.4.0-Final-Fix"
+        self.version = "12.5.0-Stable"
         gemini_api_key = os.getenv("GEMINI_API_KEY")
         if not gemini_api_key:
             raise ValueError("GEMINI_API_KEY is not set.")
@@ -225,6 +226,16 @@ class iTethrBot:
                     yield json.dumps({"type": "chunk", "content": result["content"], "convo_id": convo_id}) + "\n"
                 elif result["type"] == "error":
                     yield json.dumps(result) + "\n"
+                # [FIX] Gracefully handle function calls instead of ignoring them
+                elif result["type"] == "function_call":
+                    function_name = result['call'].get('name', 'unknown_function')
+                    logger.info(f"Model wants to call function: {function_name}")
+                    # In a full implementation, you would execute the tool here.
+                    # For now, we inform the user.
+                    tool_notice = f"\n\n*Note: I identified a need to use the tool `{function_name}`, but tool execution is not fully implemented yet.*"
+                    full_response += tool_notice
+                    yield json.dumps({"type": "chunk", "content": tool_notice, "convo_id": convo_id}) + "\n"
+
             
             if full_response: # Only save if we got a valid response
                 self.memory.add_message_to_conversation(username, convo_id, message, full_response)
