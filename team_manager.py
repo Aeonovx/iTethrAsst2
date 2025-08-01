@@ -1,5 +1,6 @@
 # File: team_manager.py
-# Description: Manages the AeonovX team database and authentication logic.
+# Description: Manages the AeonovX team database.
+# [FIX] The authenticate_user function has been removed to match the new main.py.
 
 # Team member database - Both name and password must match exactly
 AEONOVX_TEAM = {
@@ -10,20 +11,9 @@ AEONOVX_TEAM = {
     "Akhiljith": {"password": "i1234", "role": "UI designer"},
 }
 
-# --- [FIX] Added the missing authenticate_user function ---
-def authenticate_user(name, password):
-    """
-    Authenticates a user against the AEONOVX_TEAM database.
-    Returns the user's data if successful, otherwise returns None.
-    """
-    user = AEONOVX_TEAM.get(name)
-    if user and user["password"] == password:
-        return user
-    return None
-# -----------------------------------------------------------
+# --- Helper functions for team management ---
+# (All your other functions like add_team_member, list_team_members, etc., remain here)
 
-
-# --- Existing Helper functions for team management ---
 def add_team_member(name, password, role="Team Member"):
     """Add new team member to the database"""
     AEONOVX_TEAM[name] = {"password": password, "role": role}
@@ -46,7 +36,6 @@ def list_team_members():
     print("-" * 50)
     print(f"Total team members: {len(AEONOVX_TEAM)}")
 
-# (The rest of your helper functions like update_password, update_role, etc. remain here)
 def update_password(name, new_password):
     """Update team member password"""
     if name in AEONOVX_TEAM:
