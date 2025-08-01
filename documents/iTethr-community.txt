@@ -1,0 +1,879 @@
+iTethr Community Structure
+This document is intended solely for internal use and strategic partner review. Do not copy,
+distribute, or disclose without prior written consent from AeonovX SIA.
+Community System Overview
+iTethr's community infrastructure is built on a three-tier hierarchical system designed for
+structured organizational management, particularly suited for educational institutions,
+corporations, and large-scale communities.
+📍 What is Community Plus?
+Community Plus is the top-level organizational structure designed for institutions like
+universities, corporations, or large organizations. It serves as the umbrella entity that contains
+and manages multiple subsidiary communities called Hubs.
+📍 What are Hubs (Subsidiaries)?
+Hubs are subsidiary communities within a Community Plus, representing departments,
+divisions, or specific groups. Each Hub functions as a semi-autonomous community with its
+own members, rooms, and management structure. Hubs can also exist independently outside
+of any Community Plus.
+📍 What are Rooms?
+Rooms are the most granular level of organization within Hubs - similar to Discord channels
+or Telegram groups. They serve as focused spaces for specific topics, courses, projects, or
+discussions. Every Hub contains default rooms and can have additional custom rooms created
+by administrators.
+📱 Half-Page Interface Structure
+Hub Half-Page Layout
+┌─────────────────────────────────────┐
+│ 🏢 i/Computer Science 👤📊⬇ │ ← Top Bar: Hub name + Profile +
+Arrow (see other hubs)
+├─────────────────────────────────────┤ │ │
+│ 🏠 ROOMS │
+│ ┌─ 💬 General (Welcome Room) │ ├─ 📢 i/Announcements │ ← Auto-opens on first visit
+│ ← Default rooms
+│ ├─ 🎙 i/Talk │
+│ ├─ 🔧 i/Tools (AI Integration) │ ← Admin only access
+│ ├─ 📚 Database Systems 2025 │ ← Custom rooms
+│ └─ 🔬 AI Research Projects │
+│ │
+│ │
+│ │ ├─────────────────────────────────────┤
+│ ⚙ Settings 📞 Help Centre │ ← Bottom section
+└─────────────────────────────────────┘
+Community Plus Half-Page Layout
+┌─────────────────────────────────────┐
+│ 🏛 Riga Technical University 👤📊 │ ← Top Bar: Community name + Profile
+├─────────────────────────────────────┤ │ │
+│ 🏢 HUBS IN COMMUNITY │
+│ ┌─ 👑 i/General Board (Joined) │ ← User's joined hubs listed first
+│ ├─ 🔬 i/Computer Science (Joined) │
+│ ├─ ⚙ i/Mechanical Engineering │ ← Non-joined visible hubs
+│ │ [📝 Request to Join] │
+│ ├─ 🏢 i/Business Administration │
+│ │ [📝 Request to Join] │
+│ └─ 🎓 i/Student Services │
+│ [📝 Request to Join] │
+│ │
+│ 📊 INSIGHTS & ANALYTICS │ ← Owner/Admin only section
+│ ├─ Member Growth │
+│ ├─ Hub Activity │
+│ └─ Engagement Stats │
+│ │ ├─────────────────────────────────────┤
+│ ⚙ Settings 📞 Help Centre │ ← Bottom section
+└─────────────────────────────────────┘
+🚪 User Navigation & Entry Flow
+Hub Entry Flow:
+1. First Time Entry: User joins Hub → General room auto-opens (Welcome
+2. 3. experience)
+Subsequent Visits: User enters Hub half-page → Can select any room
+Room Navigation: Click any room from half-page to enter that specific room
+Inter-Hub Discovery (From Hub Top Bar):
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+🏢 i/Computer Science 👤📊⬇ ← Click arrow (⬇) to see other hubs
+│
+▼
+┌─────────────────────────────────────┐
+│ 🔍 OTHER HUBS IN COMMUNITY │
+├─────────────────────────────────────┤
+│ ✅ JOINED HUBS (Top Section) │
+│ ┌─ 👑 i/General Board │
+│ └─ 🎓 i/Student Services │
+│ │
+│ 📋 AVAILABLE HUBS (Bottom Section) │
+│ ┌─ ⚙ i/Mechanical Engineering │
+│ │ 👤 245 members [📝 Join] │
+│ ├─ 🏢 i/Business Administration │
+│ │ 👤 189 members [📝 Join] │
+│ └─ 🎨 i/Arts & Design │
+│ 👤 156 members [📝 Join] │
+└─────────────────────────────────────┘
+Default Room Structure (Updated):
+Every Hub contains 4 default rooms:
+i/Computer Science Hub
+├── 💬 General (Welcome room - auto-opens first time)
+├── 📢 i/Announcements (Admin post only, members react)
+├── 🎙 i/Talk (Live voice room)
+└── 🔧 i/Tools (AI integration - Admin access only)
+Join Request Flow & Admin Management:
+1. 2. 3. 4. 5. 6. User clicks "Join" button on non-joined Hub
+Status changes to "📝 Request to Join" for the user
+Request goes to hub admin queue (not visible to regular members)
+Admin accesses requests via Hub Profile → Members section
+Upon approval: Hub appears in user's joined hubs list
+Upon denial: User can request again after cooldown
+Complete Hub Profile Interface:Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+Admin View (Hub Owner/Admin):
+┌─────────────────────────────────────┐
+│ 🏢 i/Computer Science Hub Profile │
+├─────────────────────────────────────┤
+│ 📝 HUB BIO │
+│ "Department of Computer Science │
+│ for RTU students. Join for course │
+│ discussions, project collaboration, │
+│ and academic support." │
+│ │
+│ 📊 HUB STATS │
+│ ├─ 👥 245 Total Members │
+│ ├─ 📅 Created: Jan 15, 2025 │
+│ ├─ 🏠 4 Active Rooms │
+│ └─ 📈 89% Active this week │
+│ │
+│ 🔗 INVITE LINK │
+│ ┌─ 📋 https://itethr.com/join/H2394 │
+│ │ [📱 Copy Link] [📧 Send Email] │
+│ └─ 🔄 [Generate New Link] │
+│ │
+│ 📋 HUB RULES │
+│ ┌─ 1. Be respectful to all members │
+│ ├─ 2. No spam or self-promotion │
+│ ├─ 3. Use appropriate channels │
+│ ├─ 4. No academic dishonesty │
+│ └─ ✏ [Edit Rules] (Admin only) │
+│ │
+│ 🎭 ROLES & PERMISSIONS │
+│ ┌─ 👑 Hub Owner (1) │
+│ │ • Full hub management │
+│ ├─ 🔧 Admin (2) │
+│ │ • Manage members & rooms │
+│ ├─ 📚 Teaching Assistant (3) │
+│ │ • Moderate discussions │
+│ └─ 👤 Member (239) │
+│ • Basic participation │
+│ └─ ⚙ [Manage Roles] (Admin only) │
+│ │
+│ 🔔 PENDING REQUESTS (3) 🔴 │
+│ ┌─ 👤 John Smith │
+│ │ 📧 john.smith@rtu.lv │
+│ │ [✅ Approve] [❌ Deny] │
+│ ├─ 👤 Maria Garcia │
+│ │ 📧 maria.garcia@rtu.lv │
+│ │ [✅ Approve] [❌ Deny] │
+│ └─ 👤 Alex Johnson │
+│ 📧 alex.johnson@rtu.lv │
+│ [✅ Approve] [❌ Deny] │
+│ │
+│ 👥 MEMBERS (245) │
+│ │
+│ 👑 ADMINS (3) │
+│ ┌─ 👑 Prof. Smith (Hub Owner) │
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+│ │ 🟢 Online • Last seen now │
+│ ├─ 🔧 Dr. Johnson (Admin) │
+│ │ 🟡 Away • Last seen 2h ago │
+│ └─ 🔧 Sarah Wilson (Admin) │
+│ 🔴 Offline • Last seen 1d ago │
+│ │
+│ 📚 TEACHING ASSISTANTS (3) │
+│ ┌─ 📚 Mike Chen (TA) │
+│ │ 🟢 Online • Last seen now │
+│ ├─ 📚 Lisa Park (TA) │
+│ │ 🟡 Away • Last seen 3h ago │
+│ └─ 📚 Tom Brown (TA) │
+│ 🟢 Online • Last seen 15m ago │
+│ │
+│ 👤 MEMBERS (239) │
+│ ┌─ 👤 Anna Williams │
+│ │ 🟢 Online • Last seen now │
+│ ├─ 👤 David Miller │
+│ │ 🔴 Offline • Last seen 2d ago │
+│ └─ 📄 [View All 237 More Members] │
+│ │
+│ 🏠 ROOMS (4) │
+│ ┌─ 💬 General │
+│ ├─ 📢 i/Announcements │
+│ ├─ 🎙 i/Talk │
+│ ├─ 🔧 i/Tools │
+│ └─ 📚 Database Systems 2025 │
+│ │
+│ ⚙ Hub Management │
+│ ├─ ✏ Edit Hub Bio │
+│ ├─ 🎨 Change Hub Icon/Cover │
+│ ├─ 📋 Manage Rules │
+│ ├─ 🎭 Manage Roles & Permissions │
+│ ├─ 🏠 Manage Rooms │
+│ ├─ 🔒 Privacy Settings │
+│ ├─ 📊 Hub Analytics │
+│ └─ 🗑 Delete Hub │
+│ │
+│ 🚪 Leave Hub 🚨 Report Hub │
+└─────────────────────────────────────┘
+Regular Member View:
+┌─────────────────────────────────────┐
+│ 🏢 i/Computer Science Hub Profile │
+├─────────────────────────────────────┤
+│ 📝 HUB BIO │
+│ "Department of Computer Science │
+│ for RTU students. Join for course │
+│ discussions, project collaboration, │
+│ and academic support." │
+│ │
+│ 📊 HUB STATS │
+│ ├─ 👥 245 Total Members │
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+│ ├─ 📅 Created: Jan 15, 2025 │
+│ ├─ 🏠 4 Active Rooms │
+│ └─ 📈 89% Active this week │
+│ │
+│ 🔗 INVITE LINK │
+│ ┌─ 📋 https://itethr.com/join/H2394 │
+│ │ [📱 Copy Link] [📧 Send Email] │
+│ └─ 💡 Invite your friends! │
+│ │
+│ 📋 HUB RULES │
+│ ┌─ 1. Be respectful to all members │
+│ ├─ 2. No spam or self-promotion │
+│ ├─ 3. Use appropriate channels │
+│ └─ 4. No academic dishonesty │
+│ │
+│ 🎭 ROLES & PERMISSIONS │
+│ ┌─ 👑 Hub Owner (1) │
+│ ├─ 🔧 Admin (2) │
+│ ├─ 📚 Teaching Assistant (3) │
+│ └─ 👤 Member (239) │
+│ │
+│ 👥 MEMBERS (245) │
+│ │
+│ 👑 ADMINS (3) │
+│ ┌─ 👑 Prof. Smith (Hub Owner) │
+│ ├─ 🔧 Dr. Johnson (Admin) │
+│ └─ 🔧 Sarah Wilson (Admin) │
+│ │
+│ 📚 TEACHING ASSISTANTS (3) │
+│ ┌─ 📚 Mike Chen (TA) │
+│ ├─ 📚 Lisa Park (TA) │
+│ └─ 📚 Tom Brown (TA) │
+│ │
+│ 👤 MEMBERS (239) │
+│ ┌─ 👤 Anna Williams │
+│ ├─ 👤 David Miller │
+│ └─ 📄 [View All 237 More Members] │
+│ │
+│ 🏠 ROOMS (4) │
+│ ┌─ 💬 General │
+│ ├─ 📢 i/Announcements │
+│ ├─ 🎙 i/Talk │
+│ ├─ 🔧 i/Tools │
+│ └─ 📚 Database Systems 2025 │
+│ │
+│ 📞 Contact Admins │
+│ └─ 💬 [Message Hub Admins] │
+│ │
+│ 🚪 Leave Hub 🚨 Report Hub │
+└─────────────────────────────────────┘
+Community Plus Creation Flow
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+Step 1: University Head Creates Community Plus
+1. 2. 3. 4. Click Create Button → Community Plus
+Add Details: Name, Photo, Description
+Add Admin Members: Invite professors and assign powers
+Default Hub Creation: System auto-creates i/General Hub for board members
+Step 2: Professors Create Department Hubs
+1. 2. Professors use Create Button → Hub
+Create Department Hub: e.g., "i/Computer Science"
+3. Auto-Generated Default Rooms:
+o General (Main discussion)
+o i/Announcements (Official updates)
+o i/Talk (Voice/Audio conversations)
+o i/Tools (AI integration - Admin only)
+Step 3: Student Onboarding
+1. 2. 3. Professor sends Hub link to students
+Students join specific Hub under the Community Plus
+Students only see their joined Hub (not other department Hubs)
+Advanced Visibility Control System
+Default State (Privacy-First)
+Community Plus: Riga Technical University
+├── 👑 i/General (Board Hub - Auto-created)
+├── 🔒 i/Computer Science (Hidden to others)
+├── 🔒 i/Mechanical Engineering (Hidden to others)
+├── 🔒 i/Business Administration (Hidden to others)
+└── 🔒 i/Student Services (Hidden to others)
+• Only Owner can see all Hubs
+• Members see only their joined Hubs
+• Other Hubs remain completely hidden
+Selective Visibility (Owner Control)
+Community Plus: Riga Technical University
+├── 👑 i/General (Visible to all professors)
+├── 👁 i/Computer Science (Made visible by owner)
+├── 🔒 i/Mechanical Engineering (Still hidden)
+├── 👁 i/Business Administration (Made visible by owner)
+└── 🔒 i/Student Services (Still hidden)
+• Owner turns ON visibility for specific HubsDocument maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+• Visible Hubs can be seen but not accessed
+• Members can request to join visible Hubs
+🏛 Institutional Structure Examples
+University Structure (Privacy-First Model)
+Community Plus: Riga Technical University
+Riga Technical University (Community Plus)
+├── 👑 i/General Board (Board Hub - Auto-created, customizable name)
+│ ├── 💬 General (Board discussions)
+│ ├── 📢 Announcements (University announcements - admin post only)
+│ └── 🎙 Talk (Board live voice room)
+│
+├── 🔒 i/Computer Science (Hidden by default)
+│ ├── 💬 General (CS general chat)
+│ ├── 📢 Announcements (Department announcements - admin post only)
+│ ├── 🎙 Talk (Live voice discussions)
+│ ├── 📚 Database Systems 2025 (Custom room)
+│ └── 🔬 AI Research Projects (Custom room)
+│
+├── 🔒 i/Mechanical Engineering (Hidden by default)
+│ ├── 💬 General
+│ ├── 📢 Announcements (Admin post only)
+│ ├── 🎙 Talk (Live voice room)
+│ └── ⚙ Manufacturing Lab (Custom room)
+│
+└── 👁 i/Student Services (Made visible by owner)
+├── 💬 General
+├── 📢 Announcements (Admin post only)
+├── 🎙 Talk (Live voice room)
+└── 🏠 Housing Support (Custom room)
+Independent Hub Example (No Community Plus):
+Photography Club (Independent Hub)
+├── 💬 General (Main chat)
+├── 📢 Announcements (Admin post only, members react)
+└── 🎙 Talk (Live voice room)
+Corporate Structure (Mixed Visibility)
+Community Plus: Microsoft Latvia
+• Hub Creation: Department heads only
+• Visibility: Role-based Hub visibility
+• Access: Employee invitation required
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+Microsoft Latvia (Community Plus)
+├── 📂 Engineering (Visible Hub)
+│ ├── Frontend Development (Room)
+│ ├── Backend Systems (Room)
+│ └── DevOps (Room)
+├── 🔒 Leadership Team (Hidden Hub)
+│ ├── Board Meetings (Room)
+│ └── Strategic Planning (Room)
+├── 📂 Marketing (Visible Hub)
+│ ├── Campaign Planning (Room)
+│ └── Content Creation (Room)
+└── 🔒 HR Internal (Hidden Hub)
+├── Recruitment (Room)
+└── Performance Reviews (Room)
+👥 Role-Based Permissions & Powers
+Community Plus Owner (University Head)
+• Full Control: Create/delete Hubs, manage all visibility settings
+• Analytics Access: Complete institutional analytics across all Hubs
+• Member Management: Invite/remove members, assign admin powers
+• Visibility Control: Turn ON/OFF visibility for any Hub
+• Special Access: Can see and access ALL Hubs regardless of visibility
+Admin/Professor (Assigned Powers)
+• Hub Creation: Can create new department Hubs
+• Hub Management: Full control over their own created Hubs
+• Room Creation: Create custom Rooms within their Hubs
+• Member Invitation: Send Hub links to students
+• Limited Visibility: See i/General + own Hubs + owner-visible Hubs
+• Request Access: Can request to join visible Hubs
+Hub Member (Students)
+• Room Access: Access all Rooms within joined Hubs
+• Content Creation: Post, chat, participate in discussions
+• Limited Visibility: See only joined Hubs
+• No Discovery: Cannot see other Hubs unless owner makes them visible
+• Request Access: Can request to join visible Hubs (if any)
+🔧 Technical Implementation Structure
+Database Schema Concept
+{
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+"community_plus": {
+"id": "C1234",
+"name": "Riga Technical University",
+"type": "university",
+"owner_id": "U5678",
+"created_at": "2025-07-29",
+"settings": {
+"default_hub_visibility": "hidden",
+"allow_hub_creation": true,
+"require_approval": true
+}
+},
+"hubs": [
+{
+"id": "H0001",
+"community_plus_id": "C1234",
+"name": "i/General Board", // Customizable name
+"type": "board_hub",
+"visibility": "board_only",
+"creator_id": "U5678",
+"auto_created": true,
+"prefix": "i/", // Indicates Community Plus membership
+"default_rooms": ["general", "announcements", "talk"]
+},
+{
+"id": "H2394",
+"community_plus_id": "C1234",
+"name": "i/Computer Science", // Custom name with i/ prefix
+"type": "department_hub",
+"visibility": "hidden",
+"creator_id": "U9876",
+"member_count": 245,
+"prefix": "i/",
+"default_rooms": ["general", "announcements", "talk"]
+},
+{
+"id": "H5678",
+"community_plus_id": null, // Independent Hub
+"name": "Photography Club", // No i/ prefix
+"type": "independent_hub",
+"visibility": "public",
+"creator_id": "U1111",
+"member_count": 45,
+"prefix": null,
+"default_rooms": ["general", "announcements", "talk"]
+}
+],
+"rooms": [
+{
+"id": "R5001",
+"hub_id": "H2394",
+"name": "General", // Customizable name (no i/ prefix for rooms)
+"type": "default_general",
+"auto_created": true
+},
+{
+"id": "R5002",
+"hub_id": "H2394",
+"name": "Announcements", // Fixed type but customizable name
+"type": "default_announcements",
+"auto_created": true,
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+"permissions": {
+"post": ["hub_admin", "hub_owner"],
+"react": ["all_members"],
+"chat": false // NO chat option for members
+}
+},
+{
+"id": "R5003",
+"hub_id": "H2394",
+"name": "Talk", // Customizable name
+"type": "default_voice",
+"auto_created": true,
+"features": {
+"live_voice_room": true,
+"audio_chat": true,
+"max_participants": 50
+}
+},
+{
+"id": "R5432",
+"hub_id": "H2394",
+"name": "Database Systems 2025",
+"type": "custom",
+"creator_id": "U9876"
+}
+]
+}
+Room Profile Interface:
+Room Profile (e.g., "Database Systems 2025" Room):
+┌─────────────────────────────────────┐
+│ 📚 Database Systems 2025 Room │
+├─────────────────────────────────────┤
+│ 📝 ROOM DESCRIPTION │
+│ "Discussion space for Database │
+│ Systems course. Share notes, │
+│ ask questions, and collaborate │
+│ on assignments." │
+│ │
+│ 📊 ROOM STATS │
+│ ├─ 👥 87 Members in this room │
+│ ├─ 📅 Created: Feb 1, 2025 │
+│ ├─ 💬 2,456 Messages │
+│ └─ 📈 145 messages this week │
+│ │
+│ 📌 PINNED MESSAGES (3) │
+│ ┌─ 📌 "Welcome to DB Systems! Here │
+│ │ are the course materials..." │
+│ │ - Prof. Smith, Feb 1 │
+│ ├─ 📌 "Assignment 3 due next Friday" │
+│ │ - Dr. Johnson, 2d ago │
+│ └─ 📌 "Study group every Tuesday" │
+│ - Mike Chen, 1w ago │
+│ └─ 📄 [View All Pinned Messages] │
+│ │
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+│ 📁 MEDIA & DOCUMENTS │
+│ ┌─ 📄 "Database_Lecture_1.pdf" │
+│ │ Uploaded by Prof. Smith, 1w ago │
+│ ├─ 📊 "ER_Diagram_Examples.xlsx" │
+│ │ Uploaded by Dr. Johnson, 3d ago │
+│ ├─ 🖼 "Normalization_Chart.jpg" │
+│ │ Uploaded by Sarah W., 2d ago │
+│ └─ 📄 [View All Files (23)] │
+│ │
+│ 👥 ROOM MEMBERS (87) │
+│ │
+│ 👑 ROOM ADMINS (2) │
+│ ┌─ 👑 Prof. Smith (Room Creator) │
+│ │ 🟢 Online • Last seen now │
+│ └─ 🔧 Dr. Johnson (Admin) │
+│ 🟡 Away • Last seen 1h ago │
+│ │
+│ 👤 MEMBERS (85) │
+│ ┌─ 👤 Anna Williams │
+│ │ 🟢 Online • Last seen now │
+│ ├─ 👤 David Miller │
+│ │ 🔴 Offline • Last seen 1d ago │
+│ └─ 📄 [View All 83 More Members] │
+│ │
+│ ⚙ Room Settings (Admin Only) │
+│ ├─ ✏ Edit Room Description │
+│ ├─ 📌 Manage Pinned Messages │
+│ ├─ 👥 Manage Room Members │
+│ ├─ 🔒 Room Permissions │
+│ └─ 🗑 Delete Room │
+│ │
+│ 🚪 Leave Room 🚨 Report Room │
+└─────────────────────────────────────┘
+Corrected Permission Rules:
+✅ What Each Role CAN Do:
+👑 Community Plus Owner (University President):
+• ✅ Create new hubs (i/Computer Science, i/Business, etc.)
+• ✅ Assign Hub Admins directly (becomes admin of assigned hub)
+• ✅ Assign Community Admins (optional middle management)
+• ✅ Control hub visibility settings (show/hide hubs)
+• ✅ Access all analytics across entire community
+• ✅ Revoke ANY role in the community
+• ✅ Override any assignment made by lower roles
+🔧 Community Admin (Optional - Dean/Faculty Head):
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+• ✅ Create new hubs within their domain
+• ✅ Assign Hub Admins to hubs they manage
+• ✅ Automatically become admin of hubs they create
+• ✅ Access analytics for their managed hubs
+• ❌ Cannot assign other Community Admins
+• ❌ Cannot remove Community Plus Owner
+🔧 Hub Admin (Department Head/Professor):
+• ✅ Automatically admin of hub they're assigned to
+• ✅ Automatically admin of all rooms they create
+• ✅ Full control of their assigned hub
+• ✅ Create/delete/manage all rooms in their hub
+• ✅ Assign Room Admins to specific rooms
+• ✅ Assign Teaching Assistants (hub-wide or room-specific)
+• ✅ Approve/deny member join requests for their hub
+• ✅ Access hub analytics and member management
+• ✅ Access i/Tools (AI integration)
+• ❌ Cannot assign other Hub Admins
+• ❌ Cannot manage other hubs
+🔧 Room Admin (Course Professor/Assistant):
+• ✅ Full control of assigned room(s)
+• ✅ Moderate discussions in their room
+• ✅ Pin/unpin messages in their room
+• ✅ Manage room members (add/remove)
+• ✅ Assign Teaching Assistants for their room
+• ✅ Handle room-specific reports
+• ✅ Manage shared files and documents
+• ❌ Cannot create new rooms (only Hub Admin can)
+• ❌ Cannot assign other Room Admins
+📚 Teaching Assistant (Student TA):
+• ✅ Moderate discussions in assigned rooms
+• ✅ Pin important messages (if granted)
+• ✅ Help students with questions
+• ✅ Use basic i/Tools features
+• ❌ Cannot assign any roles
+• ❌ Cannot create/delete rooms
+• ❌ Cannot manage members
+• 👤 Member (Student):
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+• ✅ Participate in joined rooms
+• ✅ Create posts and chat in rooms
+• ✅ Share files in rooms
+• ✅ React to announcements
+• ✅ Invite others via shared hub links
+• ❌ Cannot moderate or manage anything
+• ❌ Cannot access i/Tools
+• ❌ Cannot pin messages
+Auto-Admin Assignment Examples:
+Example 1: University Setup
+👑 Dr. Rector creates Community Plus "Riga Technical University"
+↓
+👑 Dr. Rector creates hub "i/Computer Science"
+↓
+👑 Dr. Rector assigns Prof. Williams as Hub Admin
+↓
+🔧 Prof. Williams automatically becomes admin of:
+├── i/Computer Science hub
+├── General room (default)
+├── i/Announcements room (default)
+├── i/Talk room (default)
+└── i/Tools room (default)
+Example 2: Course Creation
+🔧 Prof. Williams (Hub Admin) creates room "Database Systems 2025"
+↓
+🔧 Prof. Williams automatically becomes admin of "Database Systems 2025"
+↓
+🔧 Prof. Williams assigns Dr. Johnson as Room Admin for "Database Systems
+2025"
+↓
+🔧 Dr. Johnson can now manage Database Systems room specifically
+↓
+🔧 Dr. Johnson assigns Mike Chen as TA for Database Systems room
+Example 3: Multiple Rooms
+🔧 Prof. Williams (Hub Admin) creates multiple rooms:
+├── "Database Systems 2025" (auto-admin: Prof. Williams)
+├── "AI & Machine Learning" (auto-admin: Prof. Williams)
+└── "Software Engineering" (auto-admin: Prof. Williams)
+Then assigns specific Room Admins:
+├── Database Systems → Dr. Johnson (Room Admin)
+├── AI & ML → Dr. Smith (Room Admin)
+└── Software Engineering → Prof. Chen (Room Admin)
+Corrected iTethr Hierarchy (No Hub Owners):
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+🏛 Community Plus Owner → Hub Admin Assignment:
+┌─────────────────────────────────────┐ │ ← Assign Hub Admin │ ├─────────────────────────────────────┤ │ │
+│ 👤 🏢 │
+│ User Icon Hub │
+│ │
+│ Dr. Sarah Johnson │
+│ Grant Hub Admin Powers for │
+│ i/Computer Science │
+│ │
+│ 🔧 HUB ADMIN PERMISSIONS: │
+│ │
+│ 🏠 Hub Management ⚪🔵 │
+│ Full control of assigned hub │
+│ │
+│ 🏠 Room Management ⚪🔵 │
+│ Create, edit, delete rooms │
+│ │
+│ 👥 Member Management ⚪🔵 │
+│ Approve/deny join requests │
+│ │
+│ 🎯 Assign Room Admins ⚪🔵 │
+│ Grant admin powers for rooms │
+│ │
+│ 📚 Assign Teaching Assistants ⚪🔵 │
+│ Grant TA roles to students │
+│ │
+│ 📌 Content Moderation ⚪🔵 │
+│ Pin messages, moderate posts │
+│ │
+│ 📊 Hub Analytics ⚪🔵 │
+│ Access hub insights & stats │
+│ │
+│ 🔧 Access i/Tools ⚪🔵 │
+│ Use AI integration features │
+│ │
+│ NOTE: You will become the admin of │
+│ this hub and all rooms within it │
+│ │
+│ [Assign Admin] │ └─────────────────────────────────────┘
+Hub Admin → Room Admin Assignment:
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+┌─────────────────────────────────────┐ │ ← Assign Room Admin │ ├─────────────────────────────────────┤
+│ │
+│ 👤 💬 │
+│ User Icon Room │
+│ │
+│ Mike Chen (TA) │
+│ Grant Room Admin Powers for │
+│ Database Systems 2025 │
+│ │
+│ 🔧 ROOM ADMIN PERMISSIONS: │
+│ │
+│ 💬 Room Moderation ⚪🔵 │
+│ Moderate room discussions │
+│ │
+│ 📌 Pin/Unpin Messages ⚪🔵 │
+│ Manage important messages │
+│ │
+│ 👥 Room Member Control ⚪🔵 │
+│ Add/remove room members │
+│ │
+│ 📁 File Management ⚪🔵 │
+│ Manage shared documents │
+│ │
+│ 🚨 Handle Room Reports ⚪🔵 │
+│ Resolve room-level issues │
+│ │
+│ 📊 Room Analytics ⚪🔵 │
+│ View room activity stats │
+│ │
+│ ⚙ Room Settings ⚪🔵 │
+│ Edit room description/rules │
+│ │
+│ [Assign Admin] │ └─────────────────────────────────────┘
+Corrected Delegation Chain System:
+🎯 Simplified Admin Hierarchy (No Hub Owners):
+Level 1: Community Plus Owner
+👑 Community Plus Owner
+├── Can assign → 🔧 Community Admins
+├── Can assign → 🔧 Hub Admins (direct assignment)
+├── Can create → New Hubs and assign admins
+└── Can revoke → Any role in community
+Level 2: Community Admin (Optional Middle Layer)
+🔧 Community Admin
+├── Can assign → 🔧 Hub Admins (for their managed hubs)
+├── Can assign → 📚 Teaching Assistants
+├── Can create → New Hubs and become their admin
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+└── Cannot assign → 🔧 Other Community Admins
+Level 3: Hub Admin (Creator = Auto Admin)
+🔧 Hub Admin
+├── Becomes admin of → Any hub they create
+├── Full control of → Their assigned hub
+├── Can assign → 🔧 Room Admins
+├── Can assign → 📚 Teaching Assistants
+├── Can create → New rooms (auto-admin of created rooms)
+└── Cannot assign → Other Hub Admins
+Level 4: Room Admin
+🔧 Room Admin
+├── Can moderate → Assigned room only
+├── Can assign → 📚 Teaching Assistants (room-specific)
+├── Can manage → Room members and content
+└── Cannot assign → Any admin roles outside room
+Hub Creation & Auto-Admin Flow:
+When Community Plus Owner Creates Hub:
+👑 Community Plus Owner creates "i/Computer Science"
+↓
+🔧 Assigns Dr. Smith as Hub Admin
+↓
+Dr. Smith automatically becomes admin of:
+├── i/Computer Science Hub
+├── All default rooms (General, Announcements, Talk, Tools)
+└── Any future rooms he creates in this hub
+When Hub Admin Creates Room:
+🔧 Dr. Smith (Hub Admin) creates "Database Systems 2025"
+↓
+Dr. Smith automatically becomes admin of:
+├── Database Systems 2025 room
+├── Can assign Room Admins for this room
+└── Can assign TAs for this room
+Real-World University Flow (Corrected):
+Step 1: University Level
+👑 Dr. Rector (University President)
+↓ Creates Community Plus: "Riga Technical University"
+↓ Assigns Hub Admin directly →
+🔧 Prof. Williams (Computer Science Department Head)
+↓ Prof. Williams automatically becomes admin of i/Computer Science
+Step 2: Department Level
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+🔧 Prof. Williams (Hub Admin of i/Computer Science)
+↓ Creates room: "Database Systems 2025"
+↓ Automatically becomes admin of that room
+↓ Assigns Room Admin to →
+🔧 Dr. Johnson (Course Professor)
+↓ Dr. Johnson can now manage the Database course room
+Step 3: Course Level
+🔧 Dr. Johnson (Room Admin for Database Systems)
+↓ Assigns TA role to →
+📚 Senior Student Mike
+↓ Mike can moderate discussions in Database room only
+Community Plus Owner Dashboard:
+┌─────────────────────────────────────┐
+│ 👑 Community Plus Administration │
+├─────────────────────────────────────┤ │ │
+│ 🏢 HUBS & ADMINS │
+│ ├─ i/Computer Science │
+│ │ ├─ 🔧 Prof. Williams (Hub Admin)│
+│ │ └─ 👥 245 members │
+│ │ │
+│ ├─ i/Mechanical Engineering │
+│ │ ├─ 🔧 [Assign Hub Admin] │
+│ │ └─ 👥 0 members │
+│ │ │
+│ ├─ i/Business Administration │
+│ │ ├─ 🔧 Dr. Martinez (Hub Admin) │
+│ │ └─ 👥 189 members │
+│ │
+│ [+ Create New Hub] │
+│ │
+│ 🔧 COMMUNITY ADMINS (Optional) │
+│ ├─ Prof. Dean (Engineering Faculty) │
+│ └─ [+ Assign Community Admin] │ └─────────────────────────────────────┘
+Hub Admin Dashboard:
+┌─────────────────────────────────────┐
+│ 🔧 Hub Admin: i/Computer Science │
+├─────────────────────────────────────┤ │ │
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+│ 🏠 MY ROOMS & ADMINS │
+│ ├─ 💬 General (Auto-admin: Me) │
+│ ├─ 📢 i/Announcements (Auto: Me) │
+│ ├─ 🎙 i/Talk (Auto-admin: Me) │
+│ ├─ 🔧 i/Tools (Auto-admin: Me) │
+│ │ │
+│ ├─ 📚 Database Systems 2025 │
+│ │ ├─ 🔧 Dr. Johnson (Room Admin) │
+│ │ ├─ 📚 Mike Chen (TA) │
+│ │ └─ [+ Assign Room Admin] │
+│ │ │
+│ ├─ 🔬 AI Research Projects │
+│ │ ├─ 🔧 [+ Assign Room Admin] │
+│ │ └─ 👥 23 members │
+│ │
+│ [+ Create New Room] │
+│ │
+│ 👥 HUB MEMBER REQUESTS (5) │
+│ ├─ Sarah Wilson - CS Student │
+│ ├─ Mike Brown - Transfer Student │
+│ └─ [Review All Requests] │ └─────────────────────────────────────┘
+🎯 User Journey Examples
+University Creation Journey (Complete Flow)
+Day 1: University Head Setup
+👑 Dr. Rector creates "Riga Technical University" Community Plus
+👑 Adds professors as admins with Hub creation powers
+👑 System auto-creates "i/General" board Hub
+👑 All professors can access i/General for university-wide discussions
+Day 2: Department Setup
+👨🏫 Prof. Smith creates "i/Computer Science" Hub
+👨🏫 System auto-creates 3 default rooms: i/General, i/Announcements, i/Talk
+👨🏫 Prof. Smith creates custom room: "Database Systems 2025"
+👨🏫 Sends Hub invite link to CS students
+Day 3: Student Onboarding
+👨🎓 Students click link → Join iTethr → Auto-join "i/Computer Science" Hub
+👨🎓 Students see only CS Hub, cannot see other department Hubs
+👨🎓 Students participate in i/General, view i/Announcements, join i/Talk
+Day 4: Visibility Control
+👑 Dr. Rector decides to make "i/Student Services" visible
+👑 Now all professors can SEE Student Services Hub
+👨🏫 Professors can request to join Student Services
+👨🎓 Students still cannot see it (only joined Hubs visible)
+Day 5: Cross-Department Collaboration
+👨🏫 Prof. Smith requests access to visible "i/Student Services"
+✅ Approved → Now Prof. Smith is in both CS and Student Services
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+👨🏫 Can coordinate between departments for student support
+📊 Analytics & Control Panel
+Community Plus Dashboard (Web-Only)
+• Member Analytics: Total members, growth, engagement
+• Hub Performance: Most active Hubs, member distribution
+• Content Metrics: Posts, messages, events created
+• Room Usage: Most popular discussion topics
+• Member Journey: Onboarding funnel, retention rates
+Hub Analytics (Limited)
+• Room Activity: Message volume, member participation
+• Event Attendance: Community event success rates
+• Service Marketplace: Hub-specific service offerings
+• Member Engagement: Active users, contribution scores
+🚀 Implementation Phases
+Phase 1: Core Structure
+• Community Plus creation and management
+• Basic Hub creation within Community Plus
+• Simple Room creation within Hubs
+• Member invitation and role assignment
+Phase 2: Visibility Controls
+• Hub visibility settings (public/hidden)
+• Role-based access control
+• Advanced permission management
+• Analytics dashboard
+Phase 3: Advanced Features
+• Custom branding for Community Plus
+• Advanced analytics and reporting
+• Integration with institutional systems
+• Automated member onboarding
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025
+🎯 Key Benefits
+For Universities
+• Structured Communication: Clear departmental organization
+• Student Engagement: Easy discovery of relevant communities
+• Administrative Control: Oversight without micromanagement
+• Analytics Insights: Understanding student interaction patterns
+For Corporations
+• Hierarchical Privacy: Sensitive information protection
+• Team Collaboration: Department-specific spaces
+• Cross-team Discovery: Optional inter-department visibility
+• Management Analytics: Employee engagement metrics
+🔄 Flexibility Features
+• Hybrid Models: Mix of open and hidden Hubs within same Community Plus
+• Dynamic Permissions: Role-based access that can evolve
+• Custom Onboarding: Institution-specific welcome flows
+• Integration Ready: APIs for institutional system integration
+Document maintained by AeonovX Product Team – Version 1.0 Last updated: July 2025

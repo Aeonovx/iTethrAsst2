@@ -1,0 +1,16 @@
+#AI and Search
+sentence-transformers
+scikit-learn
+numpy
+requests
+
+#Web Framework
+fastapi
+uvicorn[standard]
+
+#Slack Integration
+slack_bolt
+
+#Utilities
+python-dotenv
+PyYAML

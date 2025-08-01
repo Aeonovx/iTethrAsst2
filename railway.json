@@ -1,0 +1,19 @@
+{
+    "build": {
+      "builder": "DOCKERFILE"
+    },
+    "deploy": {
+      "startCommand": "./start.sh",
+      "restartPolicyType": "ON_FAILURE",
+      "restartPolicyMaxRetries": 3
+    },
+    "environments": {
+      "production": {
+        "variables": {
+          "PORT": "$PORT",
+          "RAILWAY_STATIC_URL": "$RAILWAY_STATIC_URL",
+          "RAILWAY_ENVIRONMENT": "production"
+        }
+      }
+    }
+  }
