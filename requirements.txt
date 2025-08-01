@@ -15,3 +15,4 @@ aiohttp
 #Utilities
 python-dotenv
 PyYAML
+pytz
