@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import asyncio
-from fastapi.middleware.cors import CORSMiddleware # Import the CORS middleware
+from fastapi.middleware.cors import CORSMiddleware
 
 # Assuming your iTethrBot class is in 'bot.py'
 from bot import iTethrBot
@@ -25,22 +25,17 @@ app = FastAPI(
     version="14.2.0-Phoenix"
 )
 
-# --- [FIX] Add CORS Middleware ---
-# This is the most likely fix for the "Could not connect to the server" error.
-origins = [
-    "*"  # You can restrict this to your production URL for better security
-]
-
+# --- Add CORS Middleware ---
+origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"], # Allows all methods
-    allow_headers=["*"], # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# --- Mount Static Files (Corrected Path) ---
-# This ensures your CSS, JS, and any other static assets are served correctly.
+# --- Mount Static Files ---
 app.mount("/static", StaticFiles(directory="web_ui"), name="static")
 
 # --- Template Engine Setup ---
@@ -54,7 +49,8 @@ class AuthRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     username: str
-    convo_id: str = None 
+    # [CRITICAL FIX] Corrected type hint to allow convo_id to be a string OR None.
+    convo_id: str | None = None
     user_info: dict = {}
 
 # --- Bot Initialization ---
@@ -62,7 +58,7 @@ try:
     bot = iTethrBot()
     logger.info("✅ iTethrBot instance created successfully.")
 except Exception as e:
-    logger.error(f"❌ Failed to initialize iTethrBot: {e}")
+    logger.error(f"❌ Failed to initialize iTethrBot: {e}", exc_info=True)
     bot = None
 
 # --- API Endpoints ---
@@ -74,33 +70,26 @@ async def serve_frontend(request: Request):
 
 @app.post("/api/auth", summary="Authenticate User")
 async def authenticate_user(auth_request: AuthRequest):
-    """
-    Handles user authentication.
-    """
+    """Handles user authentication."""
     if not bot:
         raise HTTPException(status_code=503, detail="Bot is not initialized.")
-    try:
-        user = bot.authenticate(auth_request.name, auth_request.password)
-        if user:
-            logger.info(f"Authentication successful for user: {user['username']}")
-            return {"status": "success", "username": user['username'], "role": user['role']}
-        else:
-            logger.warning(f"Authentication failed for user: {auth_request.name}")
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-    except Exception as e:
-        logger.error(f"Authentication error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during authentication.")
+    user = bot.authenticate(auth_request.name, auth_request.password)
+    if user:
+        logger.info(f"Authentication successful for user: {user['username']}")
+        return {"status": "success", "username": user['username'], "role": user['role']}
+    else:
+        logger.warning(f"Authentication failed for user: {auth_request.name}")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.post("/api/chat", summary="Process Chat Message with Streaming")
 async def chat_endpoint(chat_request: ChatRequest):
-    """
-    Receives a message and streams the bot's response back to the client.
-    """
+    """Receives a message and streams the bot's response back to the client."""
     if not bot:
         raise HTTPException(status_code=503, detail="Bot service is not available.")
 
-    async def stream_generator():
-        try:
+    try:
+        # The generator function that yields response chunks
+        async def stream_generator():
             g = bot.get_response_stream(
                 message=chat_request.message,
                 username=chat_request.username,
@@ -109,13 +98,12 @@ async def chat_endpoint(chat_request: ChatRequest):
             )
             for chunk in g:
                 yield chunk
-                await asyncio.sleep(0.01)
-        except Exception as e:
-            logger.error(f"Error during response streaming: {e}")
-            yield "Error: Could not generate a response."
+                await asyncio.sleep(0.01) # Yield control to the event loop
 
-    return StreamingResponse(stream_generator(), media_type="text/event-stream")
-
+        return StreamingResponse(stream_generator(), media_type="text/event-stream")
+    except Exception as e:
+        logger.error(f"Error creating stream generator: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to start chat stream.")
 
 # --- Server Execution ---
 if __name__ == "__main__":

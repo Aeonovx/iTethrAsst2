@@ -1,9 +1,8 @@
 // File: web_ui/script.js
-// [FIX] Implemented robust error handling for HTTP 422 errors.
-// [FIX] Added full functionality for New Chat and Menu buttons.
+// [FINAL FIX] Handles 422 errors and makes all UI buttons functional.
 
 document.addEventListener("DOMContentLoaded", () => {
-    // --- DOM Elements ---
+    // DOM Elements
     const loginContainer = document.getElementById('login-container');
     const appContainer = document.querySelector('.app-container');
     const loginForm = document.getElementById('login-form');
@@ -11,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginError = document.getElementById('login-error');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
-
     const chatContainer = document.getElementById('chat-container');
     const welcomeScreen = document.getElementById('welcome-screen');
     const welcomeTitle = document.getElementById('welcome-title');
@@ -20,13 +18,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     const suggestionChips = document.querySelector('.suggestion-chips');
-
     const menuBtn = document.getElementById('menu-btn');
     const newChatBtn = document.getElementById('new-chat-btn');
     const userAvatarEl = document.getElementById('user-avatar');
     const userNameEl = document.getElementById('user-name');
     const userRoleEl = document.getElementById('user-role');
-
 
     let currentUser = null;
     let currentConvoId = null;
@@ -37,10 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
         userNameEl.textContent = user.name;
         userRoleEl.textContent = user.role;
         userAvatarEl.textContent = user.name.charAt(0).toUpperCase();
-
         welcomeTitle.innerHTML = `Welcome back, <span class="primary-text">${user.name}</span>!`;
         welcomeSubtitle.textContent = `As a ${user.role}, how can I assist you today?`;
-        
         loginContainer.style.display = 'none';
         appContainer.style.display = 'flex';
     };
@@ -70,18 +64,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, password }),
             });
-
             if (response.ok) {
                 const userData = await response.json();
                 sessionStorage.setItem('iTethrUser', JSON.stringify({ name: userData.username, role: userData.role }));
                 setupUIForUser({ name: userData.username, role: userData.role });
             } else {
                 const errorData = await response.json();
-                loginError.textContent = errorData.detail || 'Invalid credentials. Please try again.';
+                loginError.textContent = errorData.detail || 'Invalid credentials.';
             }
         } catch (error) {
             console.error('Login error:', error);
-            loginError.textContent = 'Could not connect to the server. Please check your connection.';
+            loginError.textContent = 'Could not connect to the server.';
         } finally {
             loginBtn.disabled = false;
             loginBtn.textContent = 'Authenticate';
@@ -93,11 +86,9 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const message = chatInput.value.trim();
         if (!message || !currentUser || sendBtn.disabled) return;
-        
         welcomeScreen.style.display = 'none';
         appendMessage(message, 'user');
         chatInput.value = '';
-
         getBotResponseStream(message);
     });
 
@@ -107,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const botMessageElement = createBotMessageElement();
 
         if (!currentUser || !currentUser.name) {
-            botMessageElement.innerHTML = "<p>Error: User session is invalid. Please log in again.</p>";
+            botMessageElement.innerHTML = "<p>Error: User session invalid. Please log in again.</p>";
             setChatInputDisabled(false);
             return;
         }
@@ -124,22 +115,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 }),
             });
 
-            // [CRITICAL FIX] Handle HTTP errors like 422 before trying to stream
             if (!response.ok) {
                 let errorText = `Error: ${response.status} ${response.statusText}`;
                 try {
                     const errorJson = await response.json();
                     errorText = `Error: ${JSON.stringify(errorJson.detail)}`;
-                } catch (e) {
-                    // Ignore if error response is not JSON
-                }
+                } catch (e) {}
                 throw new Error(errorText);
             }
 
             if (!response.body) return;
 
             const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-            let accumulatedResponse = '';
+            let buffer = '';
             let isFirstChunk = true;
 
             while (true) {
@@ -147,16 +135,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (done) break;
 
                 if (isFirstChunk) {
-                    botMessageElement.innerHTML = ''; // Clear typing indicator
+                    botMessageElement.innerHTML = ''; 
                     isFirstChunk = false;
                 }
-
-                accumulatedResponse += value;
-                botMessageElement.innerHTML = marked.parse(accumulatedResponse);
+                buffer += value;
+                botMessageElement.innerHTML = marked.parse(buffer);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
-            // In a real streaming implementation that sends JSON objects, you would parse line-by-line.
-            // For simple text streaming, this is sufficient. We will refine if needed.
             addCopyButtonsToCode();
 
         } catch (error) {
@@ -194,13 +179,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- EVENT LISTENERS FOR BUTTONS ---
     newChatBtn.addEventListener('click', () => {
-        // Clear all messages except the welcome screen
-        while (chatContainer.firstChild && chatContainer.firstChild !== welcomeScreen) {
-            chatContainer.removeChild(chatContainer.firstChild);
-        }
-        welcomeScreen.style.display = 'flex'; // Use flex for centering
+        chatContainer.innerHTML = '';
+        chatContainer.appendChild(welcomeScreen);
+        welcomeScreen.style.display = 'flex';
         currentConvoId = null;
-        console.log("New chat started.");
     });
 
     menuBtn.addEventListener('click', () => {
@@ -215,26 +197,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function addCopyButtonsToCode() {
-        const codeBlocks = document.querySelectorAll('pre code');
-        codeBlocks.forEach(block => {
+        document.querySelectorAll('pre code').forEach(block => {
             if (block.parentNode.querySelector('.copy-btn')) return;
             const copyButton = document.createElement('button');
             copyButton.className = 'copy-btn';
             copyButton.innerHTML = '<i class="far fa-copy"></i> Copy';
             block.parentNode.style.position = 'relative';
             block.parentNode.appendChild(copyButton);
-
             copyButton.addEventListener('click', () => {
                 navigator.clipboard.writeText(block.textContent).then(() => {
                     copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                    setTimeout(() => {
-                         copyButton.innerHTML = '<i class="far fa-copy"></i> Copy';
-                    }, 2000);
+                    setTimeout(() => { copyButton.innerHTML = '<i class="far fa-copy"></i> Copy'; }, 2000);
                 });
             });
         });
     }
 
-    // --- INITIALIZATION ---
     checkSession();
 });
