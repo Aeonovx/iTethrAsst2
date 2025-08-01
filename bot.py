@@ -143,7 +143,6 @@ class iTethrBot:
             logger.error(f"Fatal error during bot setup: {e}", exc_info=True)
             raise
     
-    # [FIX] Restored the full implementation of this function.
     def _load_all_documents(self):
         """Loads and processes documents from the ./documents folder."""
         logger.info("Starting to load documents from ./documents folder...")
@@ -178,7 +177,6 @@ class iTethrBot:
         words = content.split()
         return [' '.join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size - overlap)]
 
-    # [FIX] Restored the full implementation of this function.
     def _search_knowledge(self, question: str, top_k=3) -> str:
         """Searches for relevant document chunks."""
         if len(self.documents) == 0:
@@ -229,7 +227,7 @@ class iTethrBot:
                     yield json.dumps(result) + "\n"
             
             if full_response: # Only save if we got a valid response
-                self.memory.add_message_to_conversation(username, message, full_response)
+                self.memory.add_message_to_conversation(username, convo_id, message, full_response)
             
             yield json.dumps({"type": "end", "convo_id": convo_id}) + "\n"
 
