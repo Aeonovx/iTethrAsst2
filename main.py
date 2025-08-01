@@ -1,15 +1,16 @@
 # File: main.py
-# Description: The main FastAPI application server, with a final, robust fix for the auth endpoint.
+# Description: Final, stable version of the FastAPI application server.
 
 import logging
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 
 from bot import iTethrBot
-from team_manager import AEONOVX_TEAM # We only need the team dictionary now
+from team_manager import AEONOVX_TEAM
+import tools
 
 # --- Configuration & Initialization ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -32,43 +33,35 @@ class AuthRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     username: str
+    user_info: dict
     convo_id: str | None = None
 
 # --- API Endpoints ---
-
-# [FIX] This is the corrected authentication endpoint.
 @app.post("/api/auth")
 async def auth_endpoint(request: AuthRequest):
     user_data = AEONOVX_TEAM.get(request.name)
     if user_data and user_data["password"] == request.password:
         logger.info(f"User '{request.name}' authenticated successfully.")
-        # This structure is safe and will not crash.
         return JSONResponse(content={"username": request.name, "role": user_data["role"]})
     
     logger.warning(f"Failed authentication attempt for user '{request.name}'.")
     raise HTTPException(status_code=401, detail="Invalid credentials")
-
 
 @app.post("/api/chat")
 def chat_endpoint(request: ChatRequest):
     if not bot_instance:
         raise HTTPException(status_code=503, detail="Bot is not ready yet.")
     
-    user_info = AEONOVX_TEAM.get(request.username)
-    if not user_info:
-        raise HTTPException(status_code=404, detail="User not found")
-        
     return StreamingResponse(
         bot_instance.get_response_stream(
             message=request.message,
             username=request.username,
-            user_info=user_info,
+            user_info=request.user_info,
             convo_id=request.convo_id
         ),
         media_type="application/x-ndjson"
     )
 
-# ... (The rest of the file remains the same)
 @app.get("/api/conversations/{username}")
 async def get_conversations(username: str):
     if not bot_instance:
@@ -79,7 +72,8 @@ async def get_conversations(username: str):
 async def get_conversation(username: str, convo_id: str):
     if not bot_instance:
         raise HTTPException(status_code=503, detail="Bot not available")
-    return bot_instance.memory.get_conversation_history(username, convo_id)
+    history = bot_instance.memory.get_conversation_history(username, convo_id)
+    return JSONResponse(content=history)
 
 app.mount("/", StaticFiles(directory="web_ui", html=True), name="static")
 
