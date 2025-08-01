@@ -10,6 +10,7 @@ uvicorn[standard]
 
 #Slack Integration
 slack_bolt
+aiohttp
 
 #Utilities
 python-dotenv
