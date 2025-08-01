@@ -1,16 +1,17 @@
 // File: script.js
 // Description: Final, stable version of the frontend logic.
 // [FIX] Corrects mobile UI, personalization, and conversation history.
+// [IMPROVEMENT] Added better user feedback on login.
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
     const loginScreen = document.getElementById('login-screen');
     const chatScreen = document.getElementById('chat-screen');
     const loginForm = document.getElementById('login-form');
-    // ... (rest of element definitions are the same) ...
     const nameInput = document.getElementById('name');
     const passwordInput = document.getElementById('password');
     const loginError = document.getElementById('login-error');
+    const loginButton = loginForm.querySelector('button'); // [IMPROVEMENT] Get login button
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
@@ -24,13 +25,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const newChatButton = document.getElementById('new-chat-button');
     const copyConvoButton = document.getElementById('copy-convo-button');
     const themeToggle = document.getElementById('theme-toggle');
-    const menuToggle = document.getElementById('menu-toggle'); // Mobile menu button
+    const menuToggle = document.getElementById('menu-toggle');
 
     // --- State Management ---
     let currentUser = null;
     let currentConversationId = null;
 
-    // --- [FIX] Mobile Sidebar Logic ---
+    // --- Mobile Sidebar Logic ---
     menuToggle.addEventListener('click', () => {
         document.body.classList.toggle('sidebar-open');
     });
@@ -42,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Theme Management ---
-    // ... (no changes to theme logic) ...
     const applyTheme = (theme) => { document.body.classList.remove('light-theme', 'dark-theme'); document.body.classList.add(theme); themeToggle.checked = theme === 'dark-theme'; };
     themeToggle.addEventListener('change', () => { const newTheme = themeToggle.checked ? 'dark-theme' : 'light-theme'; localStorage.setItem('iTethrTheme', newTheme); applyTheme(newTheme); });
     const savedTheme = localStorage.getItem('iTethrTheme') || 'dark-theme';
@@ -55,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const addCopyButtonsToCode = (messageElement) => { /* ... (no changes) ... */ };
 
     const appendMessage = (sender, text) => {
-        // ... (this function is now stable, no changes) ...
         if (welcomeMessage) welcomeMessage.style.display = 'none';
         chatMessages.style.display = 'flex';
         const messageWrapper = document.createElement('div');
@@ -74,17 +73,16 @@ document.addEventListener('DOMContentLoaded', () => {
         addCopyButtonsToCode(messageContent);
         return messageContent;
     };
-    
+
     const showThinkingIndicator = () => { /* ... (no changes) ... */ };
-    
-    // [FIX] Correctly loads and displays conversation history
+
     const loadConversationHistory = async () => {
         if (!currentUser) return;
         try {
             const response = await fetch(`/api/conversations/${currentUser.name}`);
             if (response.ok) {
                 const history = await response.json();
-                conversationHistory.innerHTML = ''; // Clear previous history
+                conversationHistory.innerHTML = '';
                 history.forEach(convo => {
                     const item = document.createElement('div');
                     item.className = 'conversation-item';
@@ -102,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // [FIX] Correctly loads a single conversation
     const loadConversation = async (convoId) => {
         if (!currentUser || convoId === currentConversationId) return;
         try {
@@ -113,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 history.forEach(message => {
                     const role = message.role === 'user' ? 'user' : 'bot';
                     const content = message.content || (message.tool_calls ? "Thinking about a tool..." : "...");
-                    if (message.role !== 'tool') { // Don't display tool messages
+                    if (message.role !== 'tool') {
                          appendMessage(role, content);
                     }
                 });
@@ -128,13 +125,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const startNewChat = () => { /* ... (confirmation logic is stable, no changes) ... */ };
+    const startNewChat = () => { /* ... (no changes) ... */ };
 
-    // [FIX] Correctly displays user's name AND profession
     const handleLogin = async (e) => {
         e.preventDefault();
         const name = nameInput.value.trim();
         const password = passwordInput.value.trim();
+
+        // [IMPROVEMENT] Provide instant feedback to the user on click
+        loginButton.disabled = true;
+        loginButton.textContent = 'Logging in...';
+        loginError.textContent = '';
+
         try {
             const response = await fetch('/api/auth', {
                 method: 'POST',
@@ -145,13 +147,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 currentUser = { name: data.username, role: data.role };
                 sessionStorage.setItem('iTethrUser', JSON.stringify(currentUser));
-                
+
                 loginScreen.classList.remove('active');
                 chatScreen.classList.add('active');
-                
+
                 userInfo.textContent = `${currentUser.name}`;
                 welcomeTitle.textContent = `Welcome, ${currentUser.name}!`;
-                welcomeSubtitle.textContent = `iTethr Assistant, ready for your commands, ${currentUser.role}.`; // Fixed to show role
+                welcomeSubtitle.textContent = `iTethr Assistant, ready for your commands, ${currentUser.role}.`;
 
                 await loadConversationHistory();
                 startNewChat();
@@ -160,10 +162,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             loginError.textContent = 'An error occurred during login.';
+        } finally {
+            // [IMPROVEMENT] Reset button state
+            loginButton.disabled = false;
+            loginButton.textContent = 'Login';
         }
     };
-    
-    // [FIX] Passes user info correctly in the chat request
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
         const message = messageInput.value.trim();
@@ -175,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sendButton.disabled = true;
 
         showThinkingIndicator();
-        
+
         let botMessageContent;
         let fullResponse = "";
 
@@ -186,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     message: message,
                     username: currentUser.name,
-                    user_info: currentUser, // Pass the whole user object
+                    user_info: currentUser,
                     convo_id: currentConversationId
                 }),
             });
@@ -198,9 +203,38 @@ document.addEventListener('DOMContentLoaded', () => {
             messageInput.focus();
         }
     };
-    
+
     const copyConversation = () => { /* ... (no changes) ... */ };
 
     // --- Event Listeners and Initializers ---
-    // ... (no changes) ...
+    loginForm.addEventListener('submit', handleLogin);
+    chatForm.addEventListener('submit', handleSendMessage);
+    messageInput.addEventListener('input', autoResizeTextarea);
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage(e);
+        }
+    });
+    logoutButton.addEventListener('click', () => {
+        sessionStorage.removeItem('iTethrUser');
+        window.location.reload();
+    });
+    newChatButton.addEventListener('click', startNewChat);
+    copyConvoButton.addEventListener('click', copyConversation);
+
+    // Check for saved user session
+    const savedUser = sessionStorage.getItem('iTethrUser');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        loginScreen.classList.remove('active');
+        chatScreen.classList.add('active');
+        userInfo.textContent = `${currentUser.name}`;
+        welcomeTitle.textContent = `Welcome back, ${currentUser.name}!`;
+        welcomeSubtitle.textContent = `iTethr Assistant, ready for your commands, ${currentUser.role}.`;
+        loadConversationHistory();
+        startNewChat(); // Or load the last conversation
+    } else {
+        loginScreen.classList.add('active');
+    }
 });

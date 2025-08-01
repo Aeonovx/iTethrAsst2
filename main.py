@@ -39,11 +39,13 @@ class ChatRequest(BaseModel):
 # --- API Endpoints ---
 @app.post("/api/auth")
 async def auth_endpoint(request: AuthRequest):
-    user_data = AEONOVX_TEAM.get(request.name)
-    if user_data and user_data["password"] == request.password:
-        logger.info(f"User '{request.name}' authenticated successfully.")
-        return JSONResponse(content={"username": request.name, "role": user_data["role"]})
-    
+    # [IMPROVEMENT] Handle username in a case-insensitive way.
+    normalized_name = request.name.lower()
+    for team_member_name, credentials in AEONOVX_TEAM.items():
+        if team_member_name.lower() == normalized_name and credentials["password"] == request.password:
+            logger.info(f"User '{team_member_name}' authenticated successfully.")
+            return JSONResponse(content={"username": team_member_name, "role": credentials["role"]})
+
     logger.warning(f"Failed authentication attempt for user '{request.name}'.")
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -51,7 +53,7 @@ async def auth_endpoint(request: AuthRequest):
 def chat_endpoint(request: ChatRequest):
     if not bot_instance:
         raise HTTPException(status_code=503, detail="Bot is not ready yet.")
-    
+
     return StreamingResponse(
         bot_instance.get_response_stream(
             message=request.message,

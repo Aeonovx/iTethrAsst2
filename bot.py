@@ -1,6 +1,7 @@
 # File: bot.py
 # Description: The core logic for the iTethr Bot.
 # [FIX] Updated tool-calling logic to correctly handle arguments.
+# [IMPROVEMENT] Enhanced RAG, system prompt, and document loading.
 
 import os
 import logging
@@ -35,10 +36,10 @@ class GroqClient:
             "messages": conversation_history,
             "model": self.model,
             "stream": True,
-            "tools": tools_config, # Pass the list of tools
+            "tools": tools_config,
             "tool_choice": "auto"
         }
-        
+
         try:
             response = requests.post(self.api_url, headers=headers, json=payload, timeout=60, stream=True)
             response.raise_for_status()
@@ -66,7 +67,6 @@ class GroqClient:
                 logger.warning(f"Could not parse a Groq stream chunk: {chunk_str}. Error: {e}")
                 continue
 
-# ... (ConversationMemory class remains unchanged) ...
 class ConversationMemory:
     def __init__(self):
         self.user_conversations = defaultdict(list)
@@ -107,10 +107,10 @@ class ConversationMemory:
 
 class iTethrBot:
     def __init__(self):
-        self.version = "14.1.0-Phoenix"
+        self.version = "14.2.0-Phoenix-Enhanced"
         groq_api_key = os.getenv("GROQ_API_KEY")
         if not groq_api_key: raise ValueError("GROQ_API_KEY is not set.")
-        
+
         self.groq_client = GroqClient(api_key=groq_api_key)
         self.memory = ConversationMemory()
         self.embeddings_model = None
@@ -118,7 +118,7 @@ class iTethrBot:
         self.embeddings = []
         self._setup_bot()
         logger.info(f"🚀 {self.version} logic core initialized with tools.")
-    
+
     def _setup_bot(self):
         try:
             self.embeddings_model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -126,24 +126,48 @@ class iTethrBot:
         except Exception as e:
             logger.error(f"Fatal error during bot setup: {e}", exc_info=True)
             raise
-    
+
+    # [IMPROVEMENT] Implemented document loading and embedding.
     def _load_all_documents(self):
-        # ... (no changes) ...
-        pass
-    
+        doc_path = './documents'
+        if not os.path.exists(doc_path):
+            logger.warning(f"Documents directory not found: {doc_path}")
+            return
+
+        for filename in os.listdir(doc_path):
+            if filename.endswith(".txt"):
+                try:
+                    with open(os.path.join(doc_path, filename), 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        chunks = self._create_chunks(content)
+                        self.documents.extend(chunks)
+                        logger.info(f"Loaded and chunked document: {filename}")
+                except Exception as e:
+                    logger.error(f"Failed to read or chunk document {filename}: {e}")
+
+        if self.documents:
+            try:
+                self.embeddings = self.embeddings_model.encode(self.documents, show_progress_bar=True)
+                logger.info(f"Created {len(self.embeddings)} embeddings for the knowledge base.")
+            except Exception as e:
+                logger.error(f"Failed to create embeddings: {e}")
+
+
     def _create_chunks(self, content: str, chunk_size=400, overlap=50) -> List[str]:
-        # ... (no changes) ...
         if not content: return []
         words = content.split()
+        if not words: return []
         return [' '.join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size - overlap)]
 
+    # [IMPROVEMENT] Added a similarity threshold to improve relevance.
     def _search_knowledge(self, question: str, top_k=3) -> str:
-        # ... (no changes) ...
-        if len(self.documents) == 0: return ""
+        if len(self.documents) == 0 or self.embeddings is None or len(self.embeddings) == 0:
+            return ""
         try:
             question_embedding = self.embeddings_model.encode([question])
             similarities = cosine_similarity(question_embedding, self.embeddings)[0]
             top_indices = np.argsort(similarities)[-top_k:][::-1]
+            # [IMPROVEMENT] Filter results by a similarity threshold.
             relevant_docs = [self.documents[idx] for idx in top_indices if similarities[idx] > 0.3]
             return "\n\n---\n\n".join(relevant_docs)
         except Exception as e:
@@ -154,28 +178,37 @@ class iTethrBot:
         try:
             if not convo_id:
                 convo_id = self.memory.start_new_conversation(username, message)
-            
+
             self.memory.add_message_to_conversation(username, convo_id, {"role": "user", "content": message})
-            
-            context = self._search_knowledge(message) or "No relevant documentation was found."
-            
+
+            context = self._search_knowledge(message)
+
+            # [IMPROVEMENT] Greatly enhanced system prompt for better performance.
             system_prompt = f"""
-            You are iBot, an extremely fast and helpful AI assistant for the AeonovX team.
-            You are speaking to {user_info['name']}, a {user_info['role']}.
-            Use Markdown for formatting. Use the `DOCUMENTATION CONTEXT` to answer questions.
-            If you need to know the current time or date, you must use the 'get_current_time' tool.
+            You are iBot, an extremely fast, accurate, and helpful AI assistant for the AeonovX team, developers of the iTethr platform.
+            Your version is {self.version}. You are an expert on the iTethr platform.
+
+            You are currently speaking to {user_info.get('name', 'a team member')}, whose role is {user_info.get('role', 'Developer')}. Be respectful and professional.
+
+            **Your Primary Directive:**
+            1.  **Use Documentation First:** Your primary source of information is the `DOCUMENTATION CONTEXT` provided below. Base your answers on this context whenever possible.
+            2.  **Be Accurate:** When citing the documentation, be precise. Do not make assumptions beyond what is written.
+            3.  **Admit Ignorance:** If the documentation does not contain the answer, clearly state that the information is not in your documents and then try to answer using your general knowledge.
+            4.  **Use Tools:** If you need the current time or date, you MUST use the `get_current_time` tool. Do not guess.
+            5.  **Formatting:** Use Markdown for clear, readable formatting (e.g., lists, bolding, code blocks).
+
             ---
-            DOCUMENTATION CONTEXT: {context}
+            DOCUMENTATION CONTEXT:
+            {context if context else "No relevant documentation was found for this query."}
             ---
             """
-            
+
             api_history = [{"role": "system", "content": system_prompt}]
             api_history.extend(self.memory.get_conversation_history(username, convo_id))
 
-            # [FIX] Get tools config and pass it to the client
             tools_config_list = [tools.get_tools_config()]
-            
-            while True: # Loop to allow for tool calls
+
+            while True:
                 full_bot_response = ""
                 tool_calls_to_process = []
 
@@ -193,15 +226,14 @@ class iTethrBot:
                     assistant_message = {"role": "assistant", "content": None, "tool_calls": tool_calls_to_process}
                     self.memory.add_message_to_conversation(username, convo_id, assistant_message)
                     api_history.append(assistant_message)
-                    
+
                     for tool_call in tool_calls_to_process:
                         tool_name = tool_call['function']['name']
                         tool_args = tool_call['function']['arguments']
                         tool_call_id = tool_call['id']
-                        
-                        # [FIX] Correctly execute tool with arguments
+
                         tool_output = tools.execute_tool(name=tool_name, args=tool_args)
-                        
+
                         tool_result_message = {
                             "role": "tool",
                             "tool_call_id": tool_call_id,
@@ -209,12 +241,12 @@ class iTethrBot:
                         }
                         self.memory.add_message_to_conversation(username, convo_id, tool_result_message)
                         api_history.append(tool_result_message)
-                    
-                    continue # Loop back to the model with the tool result
+
+                    continue
                 else:
                     self.memory.add_message_to_conversation(username, convo_id, {"role": "assistant", "content": full_bot_response})
                     yield json.dumps({"type": "end", "convo_id": convo_id}) + "\n"
-                    break # Exit the loop
+                    break
 
         except Exception as e:
             logger.error(f"Critical error in get_response_stream: {e}", exc_info=True)
