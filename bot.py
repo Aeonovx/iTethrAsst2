@@ -1,5 +1,5 @@
 # File: bot.py
-# Description: The core logic for the iTethr Bot, powered by the Gemini API. (Synchronous Correction)
+# Description: The core logic for the iTethr Bot, powered by the Gemini API. (API Key & Memory Fix)
 
 import os
 import logging
@@ -21,12 +21,19 @@ from team_manager import AEONOVX_TEAM
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# [FIX] Define a top-level function for creating deques so it can be pickled.
+def create_conversation_deque():
+    """Creates a deque with a max length of 50 for conversation history."""
+    return deque(maxlen=50)
+
 class GeminiClient:
     """A client to interact with the Google Gemini API."""
     
-    def __init__(self):
-        # The API key is added by the web server from environment variables
-        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key="
+    def __init__(self, api_key: str):
+        if not api_key:
+            raise ValueError("Gemini API key is required.")
+        # [FIX] The API key is now correctly appended to the request URL.
+        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={api_key}"
         self.suggestion_schema = {
             "type": "ARRAY",
             "items": {
@@ -41,7 +48,6 @@ class GeminiClient:
         delay = initial_delay
         for attempt in range(max_retries):
             try:
-                # Using a standard synchronous post request
                 response = requests.post(self.api_url, json=payload, timeout=20)
                 response.raise_for_status()
                 return response.json()
@@ -98,15 +104,20 @@ class GeminiClient:
 class ConversationMemory:
     """Manages conversation history and user context."""
     
-    def __init__(self, max_history_per_user=50):
-        self.user_conversations = defaultdict(lambda: deque(maxlen=max_history_per_user))
+    def __init__(self):
+        # [FIX] Use the pickleable top-level function as the default factory.
+        self.user_conversations = defaultdict(create_conversation_deque)
         self._load_memory()
     
     def _load_memory(self):
         try:
             if os.path.exists('./data/memory.pkl'):
                 with open('./data/memory.pkl', 'rb') as f:
-                    self.user_conversations = pickle.load(f).get('conversations', self.user_conversations)
+                    # Load the dictionary and convert lists back to deques if necessary
+                    saved_data = pickle.load(f)
+                    loaded_conversations = saved_data.get('conversations', {})
+                    for user, convos in loaded_conversations.items():
+                        self.user_conversations[user] = deque(convos, maxlen=50)
                 logger.info("💾 Conversation memory loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to load memory: {e}")
@@ -114,10 +125,12 @@ class ConversationMemory:
     def save_memory(self):
         try:
             os.makedirs('./data', exist_ok=True)
+            # Convert deques to lists for saving, just in case
+            to_save = {user: list(convos) for user, convos in self.user_conversations.items()}
             with open('./data/memory.pkl', 'wb') as f:
-                pickle.dump({'conversations': self.user_conversations}, f)
+                pickle.dump({'conversations': to_save}, f)
         except Exception as e:
-            logger.error(f"Failed to save memory: {e}")
+            logger.error(f"Failed to save memory: {e}", exc_info=True)
     
     def add_conversation(self, username: str, question: str, response: str):
         self.user_conversations[username].append({'question': question, 'response': response})
@@ -136,8 +149,15 @@ class iTethrBot:
     """The core intelligence of the iTethr Bot, using Gemini."""
     
     def __init__(self):
-        self.version = "11.0.1-Gemini-Sync"
-        self.gemini_client = GeminiClient()
+        self.version = "11.0.2-API-Fix"
+        
+        # [FIX] Read the API key from environment variables and pass it to the client.
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        if not gemini_api_key:
+            logger.error("GEMINI_API_KEY environment variable not found. Bot will not function.")
+            raise ValueError("GEMINI_API_KEY is not set.")
+            
+        self.gemini_client = GeminiClient(api_key=gemini_api_key)
         self.memory = ConversationMemory()
         self.documents = []
         self.embeddings = []
@@ -206,7 +226,6 @@ class iTethrBot:
             suggestions = ["What is iTethr?", "How do communities work?", "Explain the bubble interface."]
         else:
             context = "\n\n---\n\n".join(relevant_docs)
-            # Calls are now synchronous
             response_text = self.gemini_client.generate_response(context, message, user_context_summary)
             suggestions = self.gemini_client.generate_suggestions(context, message)
 
