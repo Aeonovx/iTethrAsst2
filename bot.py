@@ -1,5 +1,5 @@
 # File: bot.py
-# Description: The core logic for the iTethr Bot, with the 400 error fixed and a new friendly personality.
+# Description: The core logic for the iTethr Bot, with corrected prompt handling.
 
 import os
 import logging
@@ -16,7 +16,6 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import requests
 
-# Import the new tools module we will create
 import tools
 from team_manager import AEONOVX_TEAM
 
@@ -24,11 +23,7 @@ from team_manager import AEONOVX_TEAM
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# --- Helper Functions ---
-def create_conversation_deque():
-    return deque(maxlen=50)
-
-# --- Main Classes ---
+# (GeminiClient and ConversationMemory classes remain the same, no changes needed there)
 class GeminiClient:
     """A client to interact with the Google Gemini API, now with streaming and function calling."""
     
@@ -138,6 +133,8 @@ class ConversationMemory:
     def add_message_to_conversation(self, username: str, convo_id: str, user_message: str, model_response: str):
         for convo in self.user_conversations[username]:
             if convo["id"] == convo_id:
+                # [FIX] Ensure we don't save the massive system prompt in our history
+                # We only save the actual user question.
                 convo["history"].append({"role": "user", "parts": [{"text": user_message}]})
                 convo["history"].append({"role": "model", "parts": [{"text": model_response}]})
                 break
@@ -157,7 +154,7 @@ class iTethrBot:
     """The core intelligence of the iTethr Bot, upgraded."""
     
     def __init__(self):
-        self.version = "12.1.0-Personality-Tune"
+        self.version = "12.2.0-Prompt-Fix"
         gemini_api_key = os.getenv("GEMINI_API_KEY")
         if not gemini_api_key:
             logger.error("GEMINI_API_KEY environment variable not found.")
@@ -220,45 +217,35 @@ class iTethrBot:
         if not convo_id:
             convo_id = self.memory.start_new_conversation(username, message)
         
-        conversation_history = self.memory.get_conversation_history(username, convo_id)
+        # This is the history of just user/model turns, without the system prompt
+        clean_history = self.memory.get_conversation_history(username, convo_id)
         
-        # [FIX] Combine system prompt and RAG context with the first user message.
         context = self._search_knowledge(message)
         if not context:
             context = "No relevant documentation was found for this query."
             
-        # [FIX & TUNE] New personality and instructions for the bot.
         system_prompt = f"""
         You are iBot, a friendly mentor and guide for the AeonovX team. Your goal is to explain the iTethr platform in a way that is easy to understand.
-
-        **Your Personality:**
-        - **Friendly & Encouraging:** Be warm, approachable, and act like a helpful teammate.
-        - **Simple Language:** Avoid jargon. Explain complex topics in simple terms.
-        - **Use Examples:** Whenever possible, use a small, clear example to illustrate your point.
-        - **Patient Mentor:** Guide the user. If they ask a broad question, give a clear overview and suggest what they could ask next.
-
-        **Instructions:**
-        1.  Use the `DOCUMENTATION CONTEXT` below to form your answer. Do not make up information.
-        2.  If the context doesn't contain the answer, say so clearly and politely.
-        3.  Keep your answers focused and well-structured. Use Markdown (like lists and bolding) to make it easy to read.
-
+        **Your Personality:** Friendly, encouraging, and act like a helpful teammate. Avoid jargon. Use simple examples.
+        **Instructions:** Use the `DOCUMENTATION CONTEXT` to answer. If the context is not relevant, say so politely. Use Markdown for readability.
         ---
         DOCUMENTATION CONTEXT: {context}
         ---
         """
         
-        # Prepend the system prompt to the user's message.
-        full_user_message = f"{system_prompt}\n\nUSER QUESTION: {message}"
-        
-        conversation_history.append({"role": "user", "parts": [{"text": full_user_message}]})
+        # [FIX] Construct the payload for the API call correctly.
+        # The system prompt is only included with the very latest user message.
+        api_history = list(clean_history) # Make a copy
+        api_history.append({"role": "user", "parts": [{"text": f"{system_prompt}\n\nUSER QUESTION: {message}"}]})
 
         tools_config = tools.get_tools_config()
         
         full_response = ""
-        for chunk in self.gemini_client.generate_response_stream(conversation_history, tools_config):
+        for chunk in self.gemini_client.generate_response_stream(api_history, tools_config):
             full_response += chunk
             yield json.dumps({"type": "chunk", "content": chunk, "convo_id": convo_id}) + "\n"
         
+        # Save the conversation with the original, clean user message
         self.memory.add_message_to_conversation(username, convo_id, message, full_response)
         
         yield json.dumps({"type": "end", "convo_id": convo_id}) + "\n"
