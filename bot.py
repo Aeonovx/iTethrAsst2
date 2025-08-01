@@ -1,5 +1,5 @@
 # File: bot.py
-# Description: The core logic for the iTethr Bot, upgraded with streaming, tools (function calling), and improved memory.
+# Description: The core logic for the iTethr Bot, with the 400 error fixed and a new friendly personality.
 
 import os
 import logging
@@ -36,7 +36,6 @@ class GeminiClient:
         if not api_key:
             raise ValueError("Gemini API key is required.")
         self.api_key = api_key
-        # Use the streamGenerateContent endpoint for streaming
         self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:streamGenerateContent?key={self.api_key}"
         self.non_streaming_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={self.api_key}"
 
@@ -80,36 +79,31 @@ class GeminiClient:
                                 yield part["text"]
                             
                             elif "functionCall" in part:
-                                # --- Handle Function Call ---
                                 func_call = part["functionCall"]
                                 func_name = func_call["name"]
                                 func_args = func_call["args"]
                                 
                                 logger.info(f"AI requested to call tool: {func_name} with args: {func_args}")
                                 
-                                # Execute the tool
                                 tool_response = tools.execute_tool(func_name, func_args)
                                 
-                                # Add the tool response back into the conversation
                                 conversation_history.append({"role": "model", "parts": [{"functionCall": func_call}]})
                                 conversation_history.append({
                                     "role": "tool",
                                     "parts": [{"functionResponse": {"name": func_name, "response": {"result": tool_response}}}]
                                 })
                                 
-                                # Recursively call the stream with the updated history
                                 yield from self.generate_response_stream(conversation_history, tools_config)
-                                return # Stop the current generator after the recursive call
+                                return
 
                 except json.JSONDecodeError:
-                    # Ignore chunks that are not valid JSON
                     continue
 
 class ConversationMemory:
     """Manages conversation history, now with unique IDs for each chat."""
     
     def __init__(self):
-        self.user_conversations = defaultdict(list) # Stores a list of conversation sessions
+        self.user_conversations = defaultdict(list)
         self._load_memory()
     
     def _load_memory(self):
@@ -130,20 +124,18 @@ class ConversationMemory:
             logger.error(f"Failed to save memory: {e}", exc_info=True)
     
     def start_new_conversation(self, username: str, first_message: str) -> str:
-        """Starts a new conversation session and returns its ID."""
         convo_id = str(uuid.uuid4())
         new_convo = {
             "id": convo_id,
-            "title": first_message[:40] + "...", # Generate a title from the first message
+            "title": first_message[:40] + "...",
             "timestamp": datetime.now().isoformat(),
             "history": []
         }
-        self.user_conversations[username].insert(0, new_convo) # Add to the beginning
+        self.user_conversations[username].insert(0, new_convo)
         self.save_memory()
         return convo_id
 
     def add_message_to_conversation(self, username: str, convo_id: str, user_message: str, model_response: str):
-        """Adds a user message and a model response to a specific conversation."""
         for convo in self.user_conversations[username]:
             if convo["id"] == convo_id:
                 convo["history"].append({"role": "user", "parts": [{"text": user_message}]})
@@ -152,14 +144,12 @@ class ConversationMemory:
         self.save_memory()
 
     def get_conversation_history(self, username: str, convo_id: str) -> List[Dict]:
-        """Retrieves the message history for a specific conversation."""
         for convo in self.user_conversations[username]:
             if convo["id"] == convo_id:
                 return convo["history"]
         return []
 
     def get_all_conversations_for_user(self, username: str) -> List[Dict]:
-        """Returns a list of all conversation sessions for a user (metadata only)."""
         return [{"id": c["id"], "title": c["title"], "timestamp": c["timestamp"]} for c in self.user_conversations[username]]
 
 
@@ -167,7 +157,7 @@ class iTethrBot:
     """The core intelligence of the iTethr Bot, upgraded."""
     
     def __init__(self):
-        self.version = "12.0.0-Streaming-Tools"
+        self.version = "12.1.0-Personality-Tune"
         gemini_api_key = os.getenv("GEMINI_API_KEY")
         if not gemini_api_key:
             logger.error("GEMINI_API_KEY environment variable not found.")
@@ -191,41 +181,84 @@ class iTethrBot:
             raise
     
     def _load_all_documents(self):
-        # This function remains the same
-        pass # Keeping it brief, no changes here.
+        docs_folder = './documents'
+        if not os.path.exists(docs_folder):
+            return logger.warning("Documents folder not found.")
+        
+        for filename in os.listdir(docs_folder):
+            if filename.endswith(('.txt', '.md')):
+                try:
+                    with open(os.path.join(docs_folder, filename), 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    chunks = self._create_chunks(content)
+                    if chunks:
+                        embeddings = self.embeddings_model.encode(chunks)
+                        self.documents.extend(chunks)
+                        self.embeddings.extend(embeddings)
+                except Exception as e:
+                    logger.error(f"Failed to load document '{filename}': {e}")
+        
+        if self.embeddings:
+            self.embeddings = np.array(self.embeddings)
+            logger.info(f"✅ Knowledge base loaded. Total chunks: {len(self.documents)}")
 
-    def _search_knowledge(self, question: str) -> str:
-        # This function remains the same
-        return "Placeholder context from documents." # Simplified for brevity
+    def _create_chunks(self, content: str, chunk_size=400, overlap=50) -> List[str]:
+        if not content: return []
+        words = content.split()
+        return [' '.join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size - overlap)]
+
+    def _search_knowledge(self, question: str, top_k=3) -> str:
+        if len(self.documents) == 0: return ""
+        question_embedding = self.embeddings_model.encode([question])
+        similarities = cosine_similarity(question_embedding, self.embeddings)[0]
+        top_indices = np.argsort(similarities)[-top_k:][::-1]
+        
+        relevant_docs = [self.documents[idx] for idx in top_indices if similarities[idx] > 0.3]
+        return "\n\n---\n\n".join(relevant_docs)
 
     def get_response_stream(self, message: str, username: str, convo_id: str = None) -> Generator[str, None, None]:
-        """Main streaming method to get a response from the bot."""
         if not convo_id:
             convo_id = self.memory.start_new_conversation(username, message)
         
-        # Build the conversation history for the API call
         conversation_history = self.memory.get_conversation_history(username, convo_id)
-        conversation_history.append({"role": "user", "parts": [{"text": message}]})
-
-        # Add RAG context
+        
+        # [FIX] Combine system prompt and RAG context with the first user message.
         context = self._search_knowledge(message)
-        system_prompt = f"""You are iBot, an expert AI assistant for the iTethr platform. Use the provided documentation context to answer the user's question.
-        DOCUMENTATION CONTEXT: --- {context} ---
-        """
-        conversation_history.insert(0, {"role": "system", "parts": [{"text": system_prompt}]})
+        if not context:
+            context = "No relevant documentation was found for this query."
+            
+        # [FIX & TUNE] New personality and instructions for the bot.
+        system_prompt = f"""
+        You are iBot, a friendly mentor and guide for the AeonovX team. Your goal is to explain the iTethr platform in a way that is easy to understand.
 
-        # Get the available tools configuration
+        **Your Personality:**
+        - **Friendly & Encouraging:** Be warm, approachable, and act like a helpful teammate.
+        - **Simple Language:** Avoid jargon. Explain complex topics in simple terms.
+        - **Use Examples:** Whenever possible, use a small, clear example to illustrate your point.
+        - **Patient Mentor:** Guide the user. If they ask a broad question, give a clear overview and suggest what they could ask next.
+
+        **Instructions:**
+        1.  Use the `DOCUMENTATION CONTEXT` below to form your answer. Do not make up information.
+        2.  If the context doesn't contain the answer, say so clearly and politely.
+        3.  Keep your answers focused and well-structured. Use Markdown (like lists and bolding) to make it easy to read.
+
+        ---
+        DOCUMENTATION CONTEXT: {context}
+        ---
+        """
+        
+        # Prepend the system prompt to the user's message.
+        full_user_message = f"{system_prompt}\n\nUSER QUESTION: {message}"
+        
+        conversation_history.append({"role": "user", "parts": [{"text": full_user_message}]})
+
         tools_config = tools.get_tools_config()
         
-        # Stream the response from Gemini
         full_response = ""
         for chunk in self.gemini_client.generate_response_stream(conversation_history, tools_config):
             full_response += chunk
             yield json.dumps({"type": "chunk", "content": chunk, "convo_id": convo_id}) + "\n"
         
-        # Save the final, complete response to memory
         self.memory.add_message_to_conversation(username, convo_id, message, full_response)
         
-        # Send a final message indicating the end of the stream
         yield json.dumps({"type": "end", "convo_id": convo_id}) + "\n"
-
