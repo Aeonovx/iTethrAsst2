@@ -2,6 +2,7 @@
 # Description: The core logic for the iTethr Bot.
 # [FIX] Updated tool-calling logic to correctly handle arguments.
 # [IMPROVEMENT] Enhanced RAG, system prompt, and document loading.
+# [FIX] Added the missing authenticate method.
 
 import os
 import logging
@@ -17,6 +18,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import requests
 
 import tools # Make sure tools.py is available
+from team_manager import AEONOVX_TEAM # Import team data for authentication
 
 # --- Configuration ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -118,6 +120,13 @@ class iTethrBot:
         self.embeddings = []
         self._setup_bot()
         logger.info(f"🚀 {self.version} logic core initialized with tools.")
+
+    def authenticate(self, name: str, password: str) -> Dict:
+        """Authenticates a user against the team database."""
+        user_data = AEONOVX_TEAM.get(name)
+        if user_data and user_data.get("password") == password:
+            return {"username": name, "role": user_data.get("role")}
+        return None
 
     def _setup_bot(self):
         try:
@@ -224,15 +233,16 @@ class iTethrBot:
 
                 if tool_calls_to_process:
                     assistant_message = {"role": "assistant", "content": None, "tool_calls": tool_calls_to_process}
-                    self.memory.add_message_to_conversation(username, convo_id, assistant_message)
+                    self.memory.add__message_to_conversation(username, convo_id, assistant_message)
                     api_history.append(assistant_message)
 
                     for tool_call in tool_calls_to_process:
                         tool_name = tool_call['function']['name']
-                        tool_args = tool_call['function']['arguments']
+                        tool_args_str = tool_call['function']['arguments']
                         tool_call_id = tool_call['id']
 
-                        tool_output = tools.execute_tool(name=tool_name, args=tool_args)
+                        # The model now correctly returns arguments as a stringified JSON object.
+                        tool_output = tools.execute_tool(name=tool_name, args=tool_args_str)
 
                         tool_result_message = {
                             "role": "tool",

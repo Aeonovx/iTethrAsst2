@@ -1,46 +1,28 @@
-// web_ui/static/script.js
+// File: web_ui/script.js
+// [FIX] Made stream processing robust by adding error handling.
+// [NOTE] Conversation history feature is not yet implemented.
 
-document.addEventListener("DOMContentLoaded", () => {
-    // DOM Elements
-    const loginContainer = document.getElementById('login-container');
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM Elements ---
+    const loginSection = document.getElementById('login-section');
+    const chatSection = document.getElementById('chat-section');
     const loginForm = document.getElementById('login-form');
-    const loginError = document.getElementById('login-error');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const messagesContainer = document.getElementById('messages');
+    const conversationList = document.getElementById('conversation-list');
 
-    const appContainer = document.querySelector('.app-container');
-    const chatContainer = document.getElementById('chat-container');
-    const welcomeScreen = document.getElementById('welcome-screen');
-    const welcomeTitle = document.getElementById('welcome-title');
-    const welcomeSubtitle = document.getElementById('welcome-subtitle');
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
-    const sendBtn = document.getElementById('send-btn');
-    const suggestionChips = document.querySelector('.suggestion-chips');
+    let currentConvoId = null; // Stores the ID of the current conversation
 
-    let currentUser = null;
+    // --- Event Listeners ---
 
-    // --- SESSION MANAGEMENT ---
-    const checkSession = () => {
-        const savedUser = sessionStorage.getItem('iTethrUser');
-        if (savedUser) {
-            currentUser = JSON.parse(savedUser);
-            loginContainer.style.display = 'none';
-            appContainer.style.display = 'flex';
-            welcomeTitle.innerHTML = `Welcome back, <span class="primary-text">${currentUser.name}</span>!`;
-            welcomeSubtitle.textContent = `As a ${currentUser.role}, how can I assist you today?`;
-        } else {
-            loginContainer.style.display = 'flex';
-            appContainer.style.display = 'none';
-        }
-    };
-
-    // --- LOGIN LOGIC ---
+    // Handle user login
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const name = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-        loginError.textContent = '';
+        const name = usernameInput.value;
+        const password = passwordInput.value;
 
         try {
             const response = await fetch('/api/auth', {
@@ -51,129 +33,168 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (response.ok) {
                 const userData = await response.json();
-                currentUser = { name: userData.username, role: userData.role };
-                sessionStorage.setItem('iTethrUser', JSON.stringify(currentUser));
-                checkSession();
+                sessionStorage.setItem('user', JSON.stringify(userData));
+                loginSection.style.display = 'none';
+                chatSection.style.display = 'flex';
+                // [NOTE] This function is empty. Conversation history is not implemented.
+                loadConversations();
             } else {
-                loginError.textContent = 'Invalid credentials. Please try again.';
+                const errorData = await response.json();
+                alert(`Login failed: ${errorData.detail}`);
             }
         } catch (error) {
-            console.error('Login error:', error);
-            loginError.textContent = 'An error occurred. Please check the server connection.';
+            console.error('Login request failed:', error);
+            alert('Could not connect to the server.');
         }
     });
-    
-    // --- CHAT FORM SUBMISSION ---
-    chatForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const message = chatInput.value.trim();
-        if (!message || !currentUser) return;
-        
-        // Hide welcome screen and display user message
-        welcomeScreen.style.display = 'none';
-        appendMessage(message, 'user');
-        chatInput.value = '';
 
-        // Initiate stream with the backend
-        getBotResponseStream(message);
+    // Handle sending a message
+    messageForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (message) {
+            displayMessage(message, 'user');
+            sendMessageToServer(message);
+            messageInput.value = '';
+            messageInput.disabled = true;
+        }
     });
 
-    // --- STREAM HANDLING ---
-    async function getBotResponseStream(message) {
-        setChatInputDisabled(true);
-        const botMessageElement = createBotMessageElement();
+
+    // --- Core Functions ---
+
+    /**
+     * Displays a message in the chat window.
+     * @param {string} message - The message content.
+     * @param {string} sender - 'user' or 'bot'.
+     * @param {boolean} stream - If true, adds a spinner for streaming bot messages.
+     * @returns {HTMLElement} - The created message element.
+     */
+    function displayMessage(message, sender, stream = false) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', `${sender}-message`);
+
+        const contentElement = document.createElement('div');
+        contentElement.classList.add('message-content');
+        contentElement.textContent = message;
+        messageElement.appendChild(contentElement);
+
+        if (stream) {
+            messageElement.classList.add('streaming');
+            const spinner = document.createElement('div');
+            spinner.classList.add('spinner');
+            contentElement.textContent = ''; // Clear initial text for streaming
+            contentElement.appendChild(spinner);
+        }
+
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        return messageElement;
+    }
+
+
+    /**
+     * [FIXED] Processes a chunk of data from the server's streaming response.
+     * @param {string} chunk - A string chunk from the stream.
+     * @param {HTMLElement} element - The bot message element to append content to.
+     */
+    function processStreamChunk(chunk, element) {
+        // A single chunk can have multiple complete/incomplete JSON objects.
+        // We split by newline to handle each potential object.
+        const lines = chunk.split('\n');
+
+        lines.forEach(line => {
+            if (line.trim()) {
+                try {
+                    // [FIX] This `try...catch` block prevents the app from crashing
+                    // if it receives a malformed or incomplete JSON line.
+                    const data = JSON.parse(line);
+                    
+                    if(data.type === 'chunk' && data.content) {
+                        // Remove spinner on first chunk
+                        const spinner = element.querySelector('.spinner');
+                        if (spinner) spinner.remove();
+                        // Append content as a text node to prevent XSS vulnerabilities
+                        const textNode = document.createTextNode(data.content);
+                        element.querySelector('.message-content').appendChild(textNode);
+                    } else if (data.type === 'end') {
+                        currentConvoId = data.convo_id; // Update to the final ID from server
+                        element.classList.remove('streaming');
+                        console.log(`Conversation complete. Final ID: ${currentConvoId}`);
+                    } else if (data.type === 'error') {
+                        element.classList.remove('streaming');
+                        element.querySelector('.message-content').textContent = `Error: ${data.content}`;
+                    }
+
+                } catch (error) {
+                    // Log the error but don't crash. Allows processing to continue.
+                    console.warn('Could not parse stream line:', line, error);
+                }
+            }
+        });
+    }
+
+    /**
+     * Sends the user's message to the server and handles the streaming response.
+     * @param {string} message - The message to send.
+     */
+    async function sendMessageToServer(message) {
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        if (!user) {
+            alert('You are not logged in!');
+            return;
+        }
+
+        // Display a placeholder for the bot's response immediately.
+        const botMessageElement = displayMessage('', 'bot', true);
 
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: message, username: currentUser.name }),
+                body: JSON.stringify({
+                    message: message,
+                    username: user.username,
+                    convo_id: currentConvoId,
+                    user_info: { name: user.username, role: user.role }
+                }),
             });
 
-            if (!response.body) return;
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-            const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-            let accumulatedResponse = '';
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
 
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
-                
-                accumulatedResponse += value;
-                // Use marked.js to parse markdown in real-time
-                botMessageElement.innerHTML = marked.parse(accumulatedResponse);
-                
-                // Scroll to the bottom of the chat
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+                const decodedChunk = decoder.decode(value, { stream: true });
+                processStreamChunk(decodedChunk, botMessageElement);
             }
-            // Add copy buttons to any new code blocks
-            addCopyButtonsToCode();
 
         } catch (error) {
-            botMessageElement.innerHTML = "Error: Could not connect to the assistant. Please try again.";
-            console.error('Streaming error:', error);
+            console.error('Failed to send message:', error);
+            botMessageElement.querySelector('.message-content').textContent = 'Error: Could not get a response from the server.';
         } finally {
-            setChatInputDisabled(false);
+            botMessageElement.classList.remove('streaming');
+            const spinner = botMessageElement.querySelector('.spinner');
+            if(spinner) spinner.remove();
+            messageInput.disabled = false;
+            messageInput.focus();
         }
     }
-    
-    // --- UI HELPER FUNCTIONS ---
-    function appendMessage(text, sender) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('chat-message', sender);
-        // Use marked.parse for user messages too, in case they paste markdown
-        messageElement.innerHTML = marked.parse(text);
-        chatContainer.appendChild(messageElement);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    /**
+     * [NOTE] This is a stub. To implement conversation history, this function
+     * would need to fetch data from a backend endpoint and render it
+     * into the #conversation-list element.
+     */
+    function loadConversations() {
+        console.log("Conversation loading not yet implemented.");
+        // Example of what would go here:
+        // const user = JSON.parse(sessionStorage.getItem('user'));
+        // const convos = await fetch(`/api/conversations/${user.username}`);
+        // conversationList.innerHTML = ''; // Clear list
+        // convos.forEach(convo => { /* create and append li elements */ });
     }
-
-    function createBotMessageElement() {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('chat-message', 'bot');
-        // Add a typing indicator
-        messageElement.innerHTML = '<span class="typing-indicator"></span>';
-        chatContainer.appendChild(messageElement);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-        return messageElement;
-    }
-
-    function setChatInputDisabled(disabled) {
-        chatInput.disabled = disabled;
-        sendBtn.disabled = disabled;
-        chatInput.placeholder = disabled ? "Assistant is typing..." : "Ask anything...";
-    }
-
-    suggestionChips.addEventListener('click', (e) => {
-        if (e.target.tagName === 'SPAN') {
-            chatInput.value = e.target.textContent;
-            chatInput.focus();
-        }
-    });
-
-    // --- CODE BLOCK ENHANCEMENT ---
-    function addCopyButtonsToCode() {
-        const codeBlocks = document.querySelectorAll('pre code');
-        codeBlocks.forEach(block => {
-            // Avoid adding a button if it already has one
-            if (block.nextElementSibling && block.nextElementSibling.classList.contains('copy-btn')) {
-                return;
-            }
-            const copyButton = document.createElement('button');
-            copyButton.className = 'copy-btn';
-            copyButton.innerHTML = '<i class="far fa-copy"></i> Copy';
-            block.parentNode.appendChild(copyButton);
-
-            copyButton.addEventListener('click', () => {
-                navigator.clipboard.writeText(block.textContent).then(() => {
-                    copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                    setTimeout(() => {
-                         copyButton.innerHTML = '<i class="far fa-copy"></i> Copy';
-                    }, 2000);
-                });
-            });
-        });
-    }
-
-    // --- INITIALIZATION ---
-    checkSession();
 });
