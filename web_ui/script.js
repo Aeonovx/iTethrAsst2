@@ -1,5 +1,6 @@
 // File: web_ui/script.js
-// [FIX] Implemented all user-requested features and bug fixes.
+// [FIX] Implemented robust error handling for HTTP 422 errors.
+// [FIX] Added full functionality for New Chat and Menu buttons.
 
 document.addEventListener("DOMContentLoaded", () => {
     // --- DOM Elements ---
@@ -20,7 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const sendBtn = document.getElementById('send-btn');
     const suggestionChips = document.querySelector('.suggestion-chips');
 
-    // [FIX] Get new elements
     const menuBtn = document.getElementById('menu-btn');
     const newChatBtn = document.getElementById('new-chat-btn');
     const userAvatarEl = document.getElementById('user-avatar');
@@ -34,7 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- SESSION MANAGEMENT & UI UPDATE ---
     const setupUIForUser = (user) => {
         currentUser = user;
-        // [FIX] Update user profile in sidebar
         userNameEl.textContent = user.name;
         userRoleEl.textContent = user.role;
         userAvatarEl.textContent = user.name.charAt(0).toUpperCase();
@@ -107,6 +106,12 @@ document.addEventListener("DOMContentLoaded", () => {
         setChatInputDisabled(true);
         const botMessageElement = createBotMessageElement();
 
+        if (!currentUser || !currentUser.name) {
+            botMessageElement.innerHTML = "<p>Error: User session is invalid. Please log in again.</p>";
+            setChatInputDisabled(false);
+            return;
+        }
+
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
@@ -119,6 +124,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 }),
             });
 
+            // [CRITICAL FIX] Handle HTTP errors like 422 before trying to stream
+            if (!response.ok) {
+                let errorText = `Error: ${response.status} ${response.statusText}`;
+                try {
+                    const errorJson = await response.json();
+                    errorText = `Error: ${JSON.stringify(errorJson.detail)}`;
+                } catch (e) {
+                    // Ignore if error response is not JSON
+                }
+                throw new Error(errorText);
+            }
+
             if (!response.body) return;
 
             const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
@@ -129,34 +146,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 const { value, done } = await reader.read();
                 if (done) break;
 
-                const lines = value.split('\n');
-                lines.forEach(line => {
-                    if (line.trim()) {
-                        try {
-                            const data = JSON.parse(line);
-                            if (isFirstChunk) {
-                                botMessageElement.innerHTML = ''; // Clear typing indicator
-                                isFirstChunk = false;
-                            }
-                            if (data.type === 'chunk' && data.content) {
-                                accumulatedResponse += data.content;
-                                botMessageElement.innerHTML = marked.parse(accumulatedResponse);
-                            } else if (data.type === 'end') {
-                                currentConvoId = data.convo_id;
-                                addCopyButtonsToCode();
-                            } else if (data.type === 'error') {
-                                botMessageElement.innerHTML = `<p>Error: ${data.content}</p>`;
-                            }
-                        } catch (e) {
-                            console.warn("Could not parse stream chunk: ", line);
-                        }
-                    }
-                });
+                if (isFirstChunk) {
+                    botMessageElement.innerHTML = ''; // Clear typing indicator
+                    isFirstChunk = false;
+                }
+
+                accumulatedResponse += value;
+                botMessageElement.innerHTML = marked.parse(accumulatedResponse);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
+            // In a real streaming implementation that sends JSON objects, you would parse line-by-line.
+            // For simple text streaming, this is sufficient. We will refine if needed.
+            addCopyButtonsToCode();
 
         } catch (error) {
-            botMessageElement.innerHTML = "<p>Error: Could not connect to the assistant. Please try again.</p>";
+            botMessageElement.innerHTML = `<p>${error.message}</p>`;
             console.error('Streaming error:', error);
         } finally {
             setChatInputDisabled(false);
@@ -188,12 +192,15 @@ document.addEventListener("DOMContentLoaded", () => {
         chatInput.placeholder = disabled ? "Assistant is typing..." : "Ask anything...";
     }
 
-    // --- [FIX] Event Listeners for New Buttons ---
+    // --- EVENT LISTENERS FOR BUTTONS ---
     newChatBtn.addEventListener('click', () => {
-        chatContainer.innerHTML = ''; // Clear chat
-        chatContainer.appendChild(welcomeScreen);
-        welcomeScreen.style.display = 'flex';
-        currentConvoId = null; // Reset conversation
+        // Clear all messages except the welcome screen
+        while (chatContainer.firstChild && chatContainer.firstChild !== welcomeScreen) {
+            chatContainer.removeChild(chatContainer.firstChild);
+        }
+        welcomeScreen.style.display = 'flex'; // Use flex for centering
+        currentConvoId = null;
+        console.log("New chat started.");
     });
 
     menuBtn.addEventListener('click', () => {
@@ -203,11 +210,30 @@ document.addEventListener("DOMContentLoaded", () => {
     suggestionChips.addEventListener('click', (e) => {
         if (e.target.tagName === 'SPAN') {
             chatInput.value = e.target.textContent;
-            chatForm.dispatchEvent(new Event('submit'));
+            chatForm.dispatchEvent(new Event('submit', { cancelable: true }));
         }
     });
 
-    function addCopyButtonsToCode() { /* ... function remains the same ... */ }
+    function addCopyButtonsToCode() {
+        const codeBlocks = document.querySelectorAll('pre code');
+        codeBlocks.forEach(block => {
+            if (block.parentNode.querySelector('.copy-btn')) return;
+            const copyButton = document.createElement('button');
+            copyButton.className = 'copy-btn';
+            copyButton.innerHTML = '<i class="far fa-copy"></i> Copy';
+            block.parentNode.style.position = 'relative';
+            block.parentNode.appendChild(copyButton);
+
+            copyButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(block.textContent).then(() => {
+                    copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    setTimeout(() => {
+                         copyButton.innerHTML = '<i class="far fa-copy"></i> Copy';
+                    }, 2000);
+                });
+            });
+        });
+    }
 
     // --- INITIALIZATION ---
     checkSession();

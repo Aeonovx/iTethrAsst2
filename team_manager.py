@@ -1,11 +1,11 @@
 # File: team_manager.py
 # Description: Manages the AeonovX team database.
-# [FIX] The authenticate_user function has been removed to match the new main.py.
+# [FIX] Corrected typo in role "AI Dveloper" to "AI Developer".
 
 # Team member database - Both name and password must match exactly
 AEONOVX_TEAM = {
     "Sharjan": {"password": "i1234", "role": "Financial Analyst"},
-    "Naveen": {"password": "i1234", "role": "AI Dveloper"}, 
+    "Naveen": {"password": "i1234", "role": "AI Developer"}, # Corrected typo
     "Stephen": {"password": "i1234", "role": "Backend Developer"},
     "Albert": {"password": "i1234", "role": "Frontend Developer"},
     "Akhiljith": {"password": "i1234", "role": "UI designer"},
