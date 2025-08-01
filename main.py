@@ -1,31 +1,37 @@
-# File: main.py
-# Description: Final, stable version of the FastAPI application server.
+# main.py
 
-import logging
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
 import uvicorn
+import os
+import logging
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+import asyncio
 
+# Assuming your iTethrBot class is in 'bot.py'
 from bot import iTethrBot
-from team_manager import AEONOVX_TEAM
-import tools
 
-# --- Configuration & Initialization ---
+# --- Basic Setup ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("main")
 
-app = FastAPI()
+# --- FastAPI App Initialization ---
+app = FastAPI(
+    title="iTethr Bot API",
+    description="Backend services for the iTethr conversational AI.",
+    version="14.2.0-Phoenix"
+)
 
-try:
-    bot_instance = iTethrBot()
-    logger.info("✅ iTethrBot instance created successfully.")
-except Exception as e:
-    logger.error(f"FATAL: Could not initialize iTethrBot. Error: {e}", exc_info=True)
-    bot_instance = None
+# --- Mount Static Files (Corrected Path) ---
+# This ensures your CSS, JS, and any other static assets are served correctly.
+app.mount("/static", StaticFiles(directory="web_ui/static"), name="static")
 
-# --- Pydantic Models ---
+# --- Template Engine Setup ---
+templates = Jinja2Templates(directory="web_ui")
+
+# --- Data Models ---
 class AuthRequest(BaseModel):
     name: str
     password: str
@@ -33,51 +39,66 @@ class AuthRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     username: str
-    user_info: dict
-    convo_id: str | None = None
+
+# --- Bot Initialization ---
+try:
+    bot = iTethrBot()
+    logger.info("✅ iTethrBot instance created successfully.")
+except Exception as e:
+    logger.error(f"❌ Failed to initialize iTethrBot: {e}")
+    bot = None
 
 # --- API Endpoints ---
-@app.post("/api/auth")
-async def auth_endpoint(request: AuthRequest):
-    # [IMPROVEMENT] Handle username in a case-insensitive way.
-    normalized_name = request.name.lower()
-    for team_member_name, credentials in AEONOVX_TEAM.items():
-        if team_member_name.lower() == normalized_name and credentials["password"] == request.password:
-            logger.info(f"User '{team_member_name}' authenticated successfully.")
-            return JSONResponse(content={"username": team_member_name, "role": credentials["role"]})
 
-    logger.warning(f"Failed authentication attempt for user '{request.name}'.")
-    raise HTTPException(status_code=401, detail="Invalid credentials")
+@app.get("/", summary="Serve Frontend HTML")
+async def serve_frontend(request: Request):
+    """Serves the main index.html file that powers the web UI."""
+    return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/api/chat")
-def chat_endpoint(request: ChatRequest):
-    if not bot_instance:
-        raise HTTPException(status_code=503, detail="Bot is not ready yet.")
+@app.post("/api/auth", summary="Authenticate User")
+async def authenticate_user(auth_request: AuthRequest):
+    """
+    Handles user authentication. This is a placeholder for your actual validation.
+    """
+    if not bot:
+        raise HTTPException(status_code=503, detail="Bot is not initialized.")
+    try:
+        user = bot.authenticate(auth_request.name, auth_request.password)
+        if user:
+            logger.info(f"Authentication successful for user: {user['username']}")
+            return {"status": "success", "username": user['username'], "role": user['role']}
+        else:
+            logger.warning(f"Authentication failed for user: {auth_request.name}")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+    except Exception as e:
+        logger.error(f"Authentication error: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error during authentication.")
 
-    return StreamingResponse(
-        bot_instance.get_response_stream(
-            message=request.message,
-            username=request.username,
-            user_info=request.user_info,
-            convo_id=request.convo_id
-        ),
-        media_type="application/x-ndjson"
-    )
+@app.post("/api/chat", summary="Process Chat Message with Streaming")
+async def chat_endpoint(chat_request: ChatRequest):
+    """
+    Receives a message and streams the bot's response back to the client.
+    This is the core of the live, conversational experience.
+    """
+    if not bot:
+        raise HTTPException(status_code=503, detail="Bot service is not available.")
 
-@app.get("/api/conversations/{username}")
-async def get_conversations(username: str):
-    if not bot_instance:
-        raise HTTPException(status_code=503, detail="Bot not available")
-    return bot_instance.memory.get_all_conversations_for_user(username)
+    async def stream_generator():
+        try:
+            # Use the bot's streaming generator
+            g = bot.get_response_stream(chat_request.message, chat_request.username)
+            for chunk in g:
+                yield chunk
+                await asyncio.sleep(0.01) # Small delay to ensure chunks are sent timely
+        except Exception as e:
+            logger.error(f"Error during response streaming: {e}")
+            yield "Error: Could not generate a response."
 
-@app.get("/api/conversation/{username}/{convo_id}")
-async def get_conversation(username: str, convo_id: str):
-    if not bot_instance:
-        raise HTTPException(status_code=503, detail="Bot not available")
-    history = bot_instance.memory.get_conversation_history(username, convo_id)
-    return JSONResponse(content=history)
+    return StreamingResponse(stream_generator(), media_type="text/event-stream")
 
-app.mount("/", StaticFiles(directory="web_ui", html=True), name="static")
 
+# --- Server Execution ---
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Use the PORT environment variable provided by Railway, default to 8080
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
