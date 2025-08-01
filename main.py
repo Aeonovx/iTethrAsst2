@@ -1,11 +1,11 @@
 # File: main.py
-# Description: The main FastAPI application server, with a corrected async bridge for streaming.
+# Description: The main FastAPI application server, with a final, robust fix for streaming.
 
 import os
 import logging
 from contextlib import asynccontextmanager
 import asyncio
-import threading
+import json
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -71,51 +71,27 @@ async def authenticate_user(login_data: LoginRequest):
         return {"success": True, "username": login_data.name, "role": user["role"]}
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
+# [FIX] Rewritten chat_endpoint for stability
 @app.post("/api/chat")
-async def chat_endpoint(chat_data: ChatRequest):
+def chat_endpoint(chat_data: ChatRequest):
     """
     Endpoint for the web UI to get a bot response.
-    This is now a STREAMING endpoint with a corrected async bridge.
+    This endpoint now directly returns a StreamingResponse with a synchronous generator.
+    FastAPI will handle running it in a thread pool automatically.
     """
     if not bot_instance:
         raise HTTPException(status_code=503, detail="Bot is not ready yet.")
     
-    async def stream_generator():
-        # Use an asyncio.Queue to bridge the synchronous bot generator with the async endpoint
-        queue = asyncio.Queue()
-        loop = asyncio.get_running_loop()
+    # The bot's get_response_stream is a synchronous generator.
+    # We can pass it directly to StreamingResponse.
+    return StreamingResponse(
+        bot_instance.get_response_stream(
+            chat_data.message, chat_data.username, chat_data.convo_id
+        ),
+        media_type="application/x-ndjson"
+    )
 
-        # This function will run in a separate thread
-        def run_bot_in_thread():
-            try:
-                # The bot's get_response_stream is a synchronous generator
-                for chunk in bot_instance.get_response_stream(
-                    chat_data.message, chat_data.username, chat_data.convo_id
-                ):
-                    # Use loop.call_soon_threadsafe to safely put items in the async queue from the thread
-                    loop.call_soon_threadsafe(queue.put_nowait, chunk)
-            except Exception as e:
-                logger.error(f"Error in bot thread: {e}", exc_info=True)
-                error_chunk = json.dumps({"type": "error", "content": "An internal error occurred."}) + "\n"
-                loop.call_soon_threadsafe(queue.put_nowait, error_chunk)
-            finally:
-                # Signal the end of the stream
-                loop.call_soon_threadsafe(queue.put_nowait, None)
-
-        # Start the bot logic in a daemon thread
-        thread = threading.Thread(target=run_bot_in_thread, daemon=True)
-        thread.start()
-
-        # Yield chunks from the queue as they arrive
-        while True:
-            chunk = await queue.get()
-            if chunk is None:
-                break
-            yield chunk
-
-    return StreamingResponse(stream_generator(), media_type="application/x-ndjson")
-
-# --- New Endpoints for Conversation History ---
+# --- Endpoints for Conversation History ---
 @app.get("/api/conversations/{username}")
 async def get_user_conversations(username: str):
     if not bot_instance:
@@ -135,8 +111,11 @@ async def get_conversation_history(username: str, convo_id: str):
 # (Slack integration and UI serving code remains the same)
 # --- Slack Integration ---
 if slack_enabled:
+    # This part of the code is for Slack and does not need to be changed.
+    # It uses a different mechanism for handling async tasks.
     async def process_slack_message(text, user_id, say):
         loop = asyncio.get_running_loop()
+        # Use run_in_executor for the non-streaming Slack response
         response_data = await loop.run_in_executor(
             None, bot_instance.get_response, text, f"slack_{user_id}"
         )
