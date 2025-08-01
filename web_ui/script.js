@@ -1,5 +1,5 @@
 // File: web_ui/script.js
-// [FINAL FIX] Handles 422 errors and makes all UI buttons functional.
+// [FINAL FIX] Implemented correct line-by-line JSON stream parsing.
 
 document.addEventListener("DOMContentLoaded", () => {
     // DOM Elements
@@ -126,8 +126,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!response.body) return;
 
-            const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+            // [CRITICAL FIX] Implement proper line-by-line stream parsing
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
             let buffer = '';
+            let accumulatedContent = '';
             let isFirstChunk = true;
 
             while (true) {
@@ -138,8 +141,28 @@ document.addEventListener("DOMContentLoaded", () => {
                     botMessageElement.innerHTML = ''; 
                     isFirstChunk = false;
                 }
-                buffer += value;
-                botMessageElement.innerHTML = marked.parse(buffer);
+                
+                buffer += decoder.decode(value, { stream: true });
+                let boundary;
+
+                while ((boundary = buffer.indexOf('\n')) !== -1) {
+                    const line = buffer.substring(0, boundary).trim();
+                    buffer = buffer.substring(boundary + 1);
+
+                    if (line) {
+                        try {
+                            const data = JSON.parse(line);
+                            if (data.type === 'chunk' && data.content) {
+                                accumulatedContent += data.content;
+                            } else if (data.type === 'end') {
+                                currentConvoId = data.convo_id;
+                            }
+                        } catch (e) {
+                            console.warn("Could not parse stream line: ", line, e);
+                        }
+                    }
+                }
+                botMessageElement.innerHTML = marked.parse(accumulatedContent);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
             addCopyButtonsToCode();
